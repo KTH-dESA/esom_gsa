@@ -1,0 +1,5 @@
+modelruns: config/runs.csv
+result_params: config/results.csv
+
+model_file: model/osemosys_short.txt
+osemosys_version: 85fb3e85c89ba03a60fa229896aa6421347ffb0f
