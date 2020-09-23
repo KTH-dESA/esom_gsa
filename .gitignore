@@ -1,6 +1,13 @@
 # Snakemake
 .snakemake
 
+# Workflow
+*.pdf
+*.csv
+*.lp.gz
+*.lp
+*.sol
+
 # System
 .DS_Store
 
