@@ -24,7 +24,7 @@ rule plot:
     conda: "envs/plot.yaml"
     message: "Generating plot using '{input}' and writing to '{output}'"
     shell:
-        "python scripts/plot_results.py {input} {output}"
+        "python workflow/scripts/plot_results.py {input} {output}"
 
 rule make_dag:
     output: pipe("dag.txt")
