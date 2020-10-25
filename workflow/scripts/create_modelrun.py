@@ -11,29 +11,18 @@ from otoole.read_strategies import ReadDatapackage
 from otoole.write_strategies import WriteDatafile
 
 
-def read_data(list_of_filepaths):
-    df = pd.read_csv()
-
-    return df
-
-def write_data(df, list_of_filepaths):
-    """Write out data to disk
-    """
-    pass
-
 def process_data(df: pd.DataFrame, index: List, value: float, 
                  first_year: int, last_year: int) -> pd.DataFrame:
     """Return the interpolated data between min and max years
     """
-    df.index = df.index.sortlevel(level=0)[0]
+    # df.index = df.index.sortlevel(level=0)[0]
     df = df.loc[tuple(index + [first_year]):tuple(index + [last_year])]
     df = df.reset_index().set_index('YEAR')
     df.loc[last_year, 'VALUE'] = value
     df.loc[first_year + 1:last_year - 1, 'VALUE'] = np.nan
-    print(df)
     result = df.astype({'VALUE':'float'}).interpolate(method='values')
-    print(result)
     return result.reset_index().set_index(['REGION', 'TECHNOLOGY', 'YEAR'])
+
 
 class TestInterpolate:
 
@@ -78,7 +67,6 @@ def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, 
 
     with open(parameters, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
-    print(parameters)
 
     model_params, default_values = reader.read(input_filepath)
 
@@ -90,10 +78,13 @@ def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, 
         index = parameter['indexes'].split(",")
         value = parameter['value']
         df = model_params[name]
-        new_values = process_data(df, index, value, first_year, end_year)
+        df.index = df.index.sortlevel(level=0)[0]
+        snippet = df.xs(tuple(index), drop_level=False)
+        new_values = process_data(snippet, index, value, first_year, end_year)
         model_params[name].update(new_values)
 
     writer.write(model_params, output_filepath, default_values)
+
 
 if __name__ == "__main__":
 
