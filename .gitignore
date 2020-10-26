@@ -2,11 +2,17 @@
 .snakemake
 
 # Workflow
+modelruns
+processed_data
+results
 *.pdf
 *.csv
 *.lp.gz
 *.lp
 *.sol
+
+# Vagrant
+.vagrant
 
 # System
 .DS_Store
