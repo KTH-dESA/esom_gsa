@@ -2,17 +2,23 @@ import pandas as pd
 configfile: "config/config.yaml"
 
 RESULTS = pd.read_csv(config["result_params"]).set_index('name')
-RUNS = pd.read_csv(config["modelruns"]).set_index('name')
+# SCENARIOS = pd.read_csv(config["scenarios"]).set_index('name')
 
 include: "rules/osemosys.smk"
 
 rule all:
-    input: expand("results/{modelrun}/{results}.pdf", modelrun=RUNS.index, results=RESULTS.index)
+    input: expand("results/{modelrun}/{results}.pdf", modelrun=range(config['replicates']), results=RESULTS.index)
     message: "Running pipeline to generate the files '{input}'"
+
+rule create_sample:
+    params: replicates=config['replicates']
+    output: expand('modelruns/{x}_sample.txt', x=range(config['replicates']))
+    shell:
+        "python workflow/scripts/create_sample.py {params.replicates}"
 
 rule clean:
     shell:
-        "rm -rf results/* && rm -rf results/*"
+        "rm -rf results/* && rm -rf results/* && rm -rf processed_data/* && rm -rf modelruns/*"
 
 rule clean_plots:
     shell:
@@ -34,6 +40,6 @@ rule make_dag:
 rule plot_dag:
     input: "dag.txt"
     output: "dag.png"
-    conda: "env/dag.yaml"
+    conda: "envs/dag.yaml"
     shell:
         "dot -Tpng {input} > dag.png && open dag.png"

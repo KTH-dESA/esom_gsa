@@ -2,30 +2,32 @@ wildcard_constraints:
     modelrun="\d+"
 
 rule copy_datapackage:
-    message: "Copying datapackage for '{output.folder}'"
+    message: "Copying and modifying datapackage for '{output.folder}'"
     input:
-        "resources/gcc_india/datapackage.json"
+        datapackage=config['datapackage'],
+        sample="modelruns/{model_run, \d+}_sample.txt"
     output:
         folder=directory("processed_data/gcc_india_{model_run, \d+}"),
-        dummy="processed_data/gcc_india_{model_run, \d+}/datapackage.json"
+        dummy="processed_data/gcc_india_{model_run, \d+}/datapackage.json",
     shell:
-        "otoole convert datapackage datapackage {input} {output.folder}"
+        "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
 
 rule generate_datafile:
     message: "Modifying data and generating datafile for '{output}'"
     input:
         datapackage="processed_data/gcc_india_{model_run, \d+}/datapackage.json"
-        sample="modelruns/{model_run, \d+}_sample.txt"
     output:
         "modelruns/gcc_india_{model_run}.txt"
     shell:
-        "python workflow/scripts/create_modelrun.py {input.datapackage} {output} {input.sample}"
+        "otoole convert datapackage datafile {input} {output}"
 
 rule generate_lp_file:
     message: "Generating the LP file for '{output}'"
     input: 
         data=expand("modelruns/gcc_india_{{model_run}}.txt"),
         model=config['model_file']
+    resources:
+        mem_mb=8192
     output:
         protected("results/{model_run}.lp.gz")
     log:
@@ -43,6 +45,8 @@ rule solve_lp:
         protected("results/{model_run}.sol")
     log:
         "results/cbc_{model_run}.log"
+    resources:
+        mem_mb=8192
     threads:
         1
     shell:

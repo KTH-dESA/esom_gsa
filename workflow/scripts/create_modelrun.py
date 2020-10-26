@@ -63,7 +63,7 @@ class TestInterpolate:
 def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, int, float]]]):
 
     reader = ReadDatapackage()
-    writer = WriteDatafile()
+    writer = WriteDatapackage()
 
     with open(parameters, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
