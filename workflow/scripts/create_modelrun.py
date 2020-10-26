@@ -8,7 +8,7 @@ import csv
 import pandas as pd
 import numpy as np
 from otoole.read_strategies import ReadDatapackage
-from otoole.write_strategies import WriteDatafile
+from otoole.write_strategies import WriteDatapackage
 
 
 def process_data(df: pd.DataFrame, index: List, value: float, 

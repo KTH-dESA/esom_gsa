@@ -12,7 +12,7 @@ parameters: config/parameters.csv
 datapackage: ../gui_osemosys/combined_model/combined_datapackage/datapackage.json
 
 # Model version
-model_file: resources/osemosys_short.txt
+model_file: ../osemosys/OSeMOSYS_GNU_MathProg/src/osemosys_fast.txt
 osemosys_version: abdcef99128bf9632cb25cffdf037dc4dcd9dbab
 
 solver: cbc # choices: currently only cbc. glpk, gurobi and cplex coming...
