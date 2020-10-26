@@ -18,6 +18,17 @@ Now install the other dependencies using pip:
 pip install -r requirements.txt
 ```
 
+## Configure the workflow
+
+Update the paths in the `config/config.yaml` file for `datapackage:` and `model_file:` keys. These should both hold relative paths to the combined GUI model `datapackage.json` and osemosys model file (e.g. `osemosys_fast.txt`).
+
+Each of these paths can then point to the repositories outside of the gui_workflow. So deployment to an HPC will involve:
+
+1. Copying a release package of OSeMOSYS to the server and unzipping
+2. Cloning the gui_osemosys repository to the server
+3. Cloning this repository to the server
+4. Updating the config so that the paths point to the correct locations
+
 ## Running the workflow
 
 To run the workflow, using the command `snakemake --use-conda --cores all --resources mem_mb=16000`
