@@ -1,4 +1,1 @@
 otoole
-SALib
-pandas
-numpy

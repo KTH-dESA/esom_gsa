@@ -7,7 +7,7 @@ Install snakemake using conda into a new environment called `snakemake`:
 
 ```bash
 conda install -c conda-forge mamba
-mamba create -c bioconda -c conda-forge -n snakemake snakemake-minimal
+mamba create -c bioconda -c conda-forge -n snakemake snakemake-minimal SALib pandas numpy graphviz glpk seaborn
 ```
 
 Then, activate the environment using `source activate snakemake` on Mac and Linux, or `activate snakemake` on Windows.
@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 ## Running the workflow
 
-To run the workflow, using the command `snakemake --use-conda --cores 4`
+To run the workflow, using the command `snakemake --use-conda --cores all --resources mem_mb=16000`
 
 ## Plotting the workflow
 
