@@ -27,9 +27,9 @@ rule generate_lp_file:
         data=expand("modelruns/gcc_india_{{model_run}}.txt"),
         model=config['model_file']
     resources:
-        mem_mb=8192
+        mem_mb=5000
     output:
-        protected("results/{model_run}.lp.gz")
+        protected("results/{model_run}.lp")
     log:
         "results/glpsol_{model_run}.log"
     threads:
@@ -40,13 +40,13 @@ rule generate_lp_file:
 rule solve_lp:
     message: "Solving the LP for '{output}'"
     input:
-        "results/{model_run}.lp.gz"
+        "results/{model_run}.lp"
     output:
         protected("results/{model_run}.sol")
     log:
         "results/cbc_{model_run}.log"
     resources:
-        mem_mb=4096
+        mem_mb=3000
     threads:
         1
     shell:
