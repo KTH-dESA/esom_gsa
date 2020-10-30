@@ -13,7 +13,7 @@ from otoole.write_strategies import WriteDatapackage
 
 def process_data(df: pd.DataFrame, index: List, value: float, 
                  first_year: int, last_year: int) -> pd.DataFrame:
-    """Return the interpolated data between min and max years
+    """Interpolate data between min and max years
     """
     # df.index = df.index.sortlevel(level=0)[0]
     df = df.loc[tuple(index + [first_year]):tuple(index + [last_year])]
@@ -60,32 +60,65 @@ class TestInterpolate:
         pd.testing.assert_frame_equal(actual, expected)
 
 
+def modify_parameters(
+        model_params: Dict[str, pd.DataFrame], 
+        parameters: List[Dict[str, Union[str, int, float]]], 
+        config: Dict):
+    """
+    """
+    first_year = model_params['YEAR'].min().values[0]
+    end_year = model_params['YEAR'].max().values[0]
+
+    for parameter in parameters:
+
+        name = parameter['name']
+        df = model_params[name]
+        df.index = df.index.sortlevel(level=0)[0]
+
+        index = parameter['indexes'].split(",")
+        value = parameter['value']
+        action = parameter['action']
+        inter_index = parameter['interpolation_index']
+        if action == 'interpolate':
+            snippet = df.xs(tuple(index), drop_level=False)
+            new_values = process_data(snippet, index, value, first_year, end_year)
+        elif action == 'fixed':
+            if inter_index == 'None':
+                # Create new object and update inplace
+                data = [index + [value]]
+            elif inter_index == 'YEAR':
+                # Create new object and update inplace
+                data = [index + [x] + [value] for x in range(first_year, end_year, 1)]
+            columns = config[name]['indices']
+            new_values = pd.DataFrame(data, columns=columns + ['VALUE']).set_index(columns)   
+
+        if all(new_values.index.isin(model_params[name].index)):
+            model_params[name].update(new_values)
+        else:
+            model_params[name] = model_params[name].append(new_values)
+
+    return model_params
+
+
 def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, int, float]]]):
 
     reader = ReadDatapackage()
     writer = WriteDatapackage()
 
-    with open(parameters, 'r') as csv_file:
-        parameters = list(csv.DictReader(csv_file))
-
     model_params, default_values = reader.read(input_filepath)
+    config = reader.input_config
+    config['DiscountRate']['indices'] = ['REGION','TECHNOLOGY']
 
-    first_year = model_params['YEAR'].min().values[0]
-    end_year = model_params['YEAR'].max().values[0]
-
-    for parameter in parameters:
-        name = parameter['name']
-        index = parameter['indexes'].split(",")
-        value = parameter['value']
-        df = model_params[name]
-        df.index = df.index.sortlevel(level=0)[0]
-        snippet = df.xs(tuple(index), drop_level=False)
-        new_values = process_data(snippet, index, value, first_year, end_year)
-        model_params[name].update(new_values)
-
+    model_params = modify_parameters(model_params, parameters, config)
     writer.write(model_params, output_filepath, default_values)
 
 
 if __name__ == "__main__":
 
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    if len(sys.argv) != 4:
+        print("Usage: python create_modelrun.py <input_filepath> <output_filepath> <sample_filepath>")
+    else:
+        with open(sys.argv[3], 'r') as csv_file:
+            sample = list(csv.DictReader(csv_file))
+        print(sample)
+        main(sys.argv[1], sys.argv[2], sample)

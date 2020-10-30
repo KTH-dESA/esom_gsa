@@ -46,7 +46,7 @@ rule solve_lp:
     log:
         "results/cbc_{model_run}.log"
     resources:
-        mem_mb=8192
+        mem_mb=4096
     threads:
         1
     shell:

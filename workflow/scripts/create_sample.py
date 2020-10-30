@@ -31,14 +31,16 @@ def main(parameters: List, replicates: int):
         filepath = os.path.join('modelruns', filename)
         with open(filepath, 'w') as csvfile:
 
-            fieldnames = ['name', 'indexes', 'value']
+            fieldnames = ['name', 'indexes', 'value', 'action', 'interpolation_index']
             writer = csv.DictWriter(csvfile, fieldnames)
             writer.writeheader()
 
             for column, param in zip(row, parameters):
                 data = {'name': param['name'],
                         'indexes': param['indexes'],
-                        'value': column}
+                        'value': column,
+                        'action': param['action'],
+                        'interpolation_index': param['interpolation_index']}
                 writer.writerow(data)
 
 
