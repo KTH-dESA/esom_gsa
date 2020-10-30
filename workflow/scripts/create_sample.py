@@ -24,7 +24,7 @@ def main(parameters: List, replicates: int):
     problem['names'] = names
     problem['bounds'] = bounds
 
-    sample = latin.sample(problem, replicates)
+    sample = latin.sample(problem, replicates, seed=42)
 
     for model_run, row in enumerate(sample):
         filename = "{}_sample.txt".format(model_run)
