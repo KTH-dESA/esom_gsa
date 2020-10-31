@@ -7,15 +7,15 @@ rule copy_datapackage:
         datapackage=config['datapackage'],
         sample="modelruns/{model_run, \d+}_sample.txt"
     output:
-        folder=directory("processed_data/gcc_india_{model_run, \d+}"),
-        dummy="processed_data/gcc_india_{model_run, \d+}/datapackage.json",
+        folder=directory("results/gcc_india_{model_run, \d+}"),
+        dummy="results/gcc_india_{model_run, \d+}/datapackage.json",
     shell:
         "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
 
 rule generate_datafile:
     message: "Modifying data and generating datafile for '{output}'"
     input:
-        datapackage="processed_data/gcc_india_{model_run, \d+}/datapackage.json"
+        datapackage="results/gcc_india_{model_run, \d+}/datapackage.json"
     output:
         "modelruns/gcc_india_{model_run}.txt"
     shell:
@@ -56,7 +56,7 @@ rule process_solution:
     message: "Processing CBC solution for '{output}'"
     input:
         solution="results/{model_run}.sol",
-        data="processed_data/gcc_india_{model_run}/datapackage.json"
+        data="results/gcc_india_{model_run}/datapackage.json"
     output: expand("results/{{model_run}}/{result}.csv", result=RESULTS.index)
     params:
         folder="results/{model_run}"

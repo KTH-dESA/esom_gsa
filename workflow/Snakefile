@@ -18,7 +18,7 @@ rule create_sample:
 
 rule clean:
     shell:
-        "rm -rf results/* && rm -rf results/* && rm -rf processed_data/* && rm -rf modelruns/*"
+        "rm -rf results/* && rm -rf results/* && rm -rf modelruns/*"
 
 rule clean_plots:
     shell:
