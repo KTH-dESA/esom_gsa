@@ -10,6 +10,9 @@ import numpy as np
 from otoole.read_strategies import ReadDatapackage
 from otoole.write_strategies import WriteDatapackage
 
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 def process_data(df: pd.DataFrame, index: List, value: float, 
                  first_year: int, last_year: int) -> pd.DataFrame:
@@ -88,16 +91,55 @@ def modify_parameters(
                 data = [index + [value]]
             elif inter_index == 'YEAR':
                 # Create new object and update inplace
-                data = [index + [x] + [value] for x in range(first_year, end_year, 1)]
+                data = [index + [x] + [value] for x in range(first_year, end_year + 1, 1)]
             columns = config[name]['indices']
-            new_values = pd.DataFrame(data, columns=columns + ['VALUE']).set_index(columns)   
-
+            new_values = pd.DataFrame(data, columns=columns + ['VALUE']).astype(config[name]['index_dtypes']).set_index(columns)   
         if all(new_values.index.isin(model_params[name].index)):
+            print("Updating values for {} in {}".format(index, name))
             model_params[name].update(new_values)
         else:
+            print("Appending values for {} in {}".format(index, name))
             model_params[name] = model_params[name].append(new_values)
 
     return model_params
+
+
+class TestModifyParameters:
+
+    def test_fixed_year(self):
+        name = 'VariableCost'
+        var_cost_cols = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR','VALUE']
+        var_cost_index = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR']
+        data = [
+            ["GLOBAL","AEIELEI0H",1,2015,100.0],
+            ["GLOBAL","AEIELEI0H",1,2016,100.0],
+            ["GLOBAL","AEIELEI0H",1,2017,100.0],
+            ["GLOBAL","AEIELEI0H",1,2018,100.0],
+        ]
+
+        model_params = {
+            'VariableCost': pd.DataFrame(data=[], columns=var_cost_cols).astype(
+                {'REGION': str,'TECHNOLOGY': str,'MODE_OF_OPERATION': int,'YEAR': int,'VALUE': float}
+            ).set_index(var_cost_index),
+            'YEAR': pd.DataFrame(data=[2015, 2016, 2017, 2018], columns=['VALUE'])}
+        parameters = [{'name': 'VariableCost',
+                       'indexes': "GLOBAL,AEIELEI0H,1",
+                       'value':  1,
+                       'dist': 'unif',
+                       'interpolation_index': 'YEAR',
+                       'action': 'fixed'}]
+
+        config = {'VariableCost': {'indices': var_cost_index}}
+        actual = modify_parameters(model_params, parameters, config)
+        expected = pd.DataFrame(data=[
+            ["GLOBAL","AEIELEI0H",1,2015,1.0],
+            ["GLOBAL","AEIELEI0H",1,2016,1.0],
+            ["GLOBAL","AEIELEI0H",1,2017,1.0],
+            ["GLOBAL","AEIELEI0H",1,2018,1.0],            
+        ], columns=var_cost_cols).astype(
+                {'REGION': str,'TECHNOLOGY': str,'MODE_OF_OPERATION': int,'YEAR': int,'VALUE': float}
+            ).set_index(var_cost_index)
+        pd.testing.assert_frame_equal(actual[name], expected)
 
 
 def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, int, float]]]):
@@ -105,6 +147,7 @@ def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, 
     reader = ReadDatapackage()
     writer = WriteDatapackage()
 
+    logger.info("Reading datapackage {}".format(input_filepath))
     model_params, default_values = reader.read(input_filepath)
     config = reader.input_config
     config['DiscountRate']['indices'] = ['REGION','TECHNOLOGY']
