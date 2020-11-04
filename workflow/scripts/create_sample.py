@@ -13,16 +13,20 @@ def main(parameters: List, replicates: int):
 
     names = []
     bounds = []
+    groups = []
     for parameter in parameters:
         names.append(parameter['name'] + ";" + parameter['indexes'])
         
         min_value = float(parameter['min_value'])
         max_value = float(parameter['max_value'])
+
+        groups.append(parameter['group'])
         
         bounds.append([min_value, max_value])
 
     problem['names'] = names
     problem['bounds'] = bounds
+    problem['groups'] = groups
 
     sample = latin.sample(problem, replicates, seed=42)
 
