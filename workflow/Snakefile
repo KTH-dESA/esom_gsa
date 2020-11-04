@@ -33,6 +33,7 @@ rule clean_plots:
 rule plot:
     input: "results/{modelrun}/{result}.csv"
     output: "results/{modelrun}/{result}.pdf"
+    conda: "envs/plot.yaml"
     message: "Generating plot using '{input}' and writing to '{output}'"
     shell:
         "python workflow/scripts/plot_results.py {input} {output}"
@@ -45,5 +46,6 @@ rule make_dag:
 rule plot_dag:
     input: "dag.txt"
     output: "dag.png"
+    conda: "envs/dag.yaml"
     shell:
         "dot -Tpng {input} > dag.png && open dag.png"
