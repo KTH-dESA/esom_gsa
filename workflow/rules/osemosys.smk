@@ -27,7 +27,8 @@ rule generate_lp_file:
         data=expand("modelruns/gcc_india_{{model_run}}.txt"),
         model=config['model_file']
     resources:
-        mem_mb=5000
+        mem_mb=5000,
+        disk_mb=1300
     output:
         protected("results/{model_run}.lp")
     log:
@@ -46,7 +47,8 @@ rule solve_lp:
     log:
         "results/cbc_{model_run}.log"
     resources:
-        mem_mb=3000
+        mem_mb=3000,
+        disk_mb=33
     threads:
         1
     shell:
