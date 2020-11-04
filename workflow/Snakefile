@@ -3,11 +3,12 @@ configfile: "config/config.yaml"
 
 RESULTS = pd.read_csv(config["result_params"]).set_index('name')
 # SCENARIOS = pd.read_csv(config["scenarios"]).set_index('name')
+MODELRUNS = range(config['replicates'])
 
 include: "rules/osemosys.smk"
 
 rule all:
-    input: expand("results/{modelrun}/{results}.pdf", modelrun=range(config['replicates']), results=RESULTS.index)
+    input: "results/InterconnectorActivity.csv"
     message: "Running pipeline to generate the files '{input}'"
 
 rule create_sample:
@@ -15,6 +16,11 @@ rule create_sample:
     output: expand('modelruns/{x}_sample.txt', x=range(config['replicates']))
     shell:
         "python workflow/scripts/create_sample.py {params.replicates}"
+
+rule extract_results_interconnector_activity:
+    input: expand("results/{modelrun}/ProductionByTechnologyAnnual.csv", modelrun=MODELRUNS)
+    output: "results/InterconnectorActivity.csv"
+    script: "scripts/interconnectoractivity.py"
 
 rule clean:
     shell:
