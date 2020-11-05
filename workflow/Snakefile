@@ -14,12 +14,16 @@ rule all:
 rule create_sample:
     params: replicates=config['replicates']
     output: expand('modelruns/{x}_sample.txt', x=range(config['replicates']))
+    conda: "envs/sample.yaml"
+    log: "results/create_sample.log"
     shell:
         "python workflow/scripts/create_sample.py {params.replicates}"
 
 rule extract_results_interconnector_activity:
     input: expand("results/{modelrun}/ProductionByTechnologyAnnual.csv", modelrun=MODELRUNS)
+    log: "results/log/interconnector_activity.log"
     output: "results/InterconnectorActivity.csv"
+    conda: "envs/pandas.yaml"
     script: "scripts/interconnectoractivity.py"
 
 rule clean:

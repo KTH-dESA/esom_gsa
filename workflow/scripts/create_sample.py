@@ -4,6 +4,10 @@ import csv
 from typing import List
 import sys
 
+from logging import getLogger
+
+logger = getLogger(__name__)
+
 PARAMETERS = os.path.join('config', 'parameters.csv')
 
 def main(parameters: List, replicates: int):
@@ -16,12 +20,12 @@ def main(parameters: List, replicates: int):
     groups = []
     for parameter in parameters:
         names.append(parameter['name'] + ";" + parameter['indexes'])
-        
+
         min_value = float(parameter['min_value'])
         max_value = float(parameter['max_value'])
 
         groups.append(parameter['group'])
-        
+
         bounds.append([min_value, max_value])
 
     problem['names'] = names
