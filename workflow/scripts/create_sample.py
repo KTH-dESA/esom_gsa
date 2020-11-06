@@ -1,3 +1,25 @@
+"""Generates a sample from a list of parameters
+
+Arguments
+---------
+replicates : int
+    The number of model runs to generate
+path_to_parameters : str
+    File containing the parameters to generate a sample for
+
+Usage
+-----
+To run the script on the command line, type::
+
+    python create_sample.py 10 path/to/parameters.csv
+
+The ``parameters.csv`` CSV file should be formatted as follows::
+
+    name,group,indexes,min_value,max_value,dist,interpolation_index,action
+    CapitalCost,pvcapex,"GLOBAL,GCPSOUT0N",500,1900,unif,YEAR,interpolate
+    DiscountRate,discountrate,"GLOBAL,GCIELEX0N",0.05,0.20,unif,None,fixed
+
+"""
 from SALib.sample import latin
 import os
 import csv
@@ -7,8 +29,6 @@ import sys
 from logging import getLogger
 
 logger = getLogger(__name__)
-
-PARAMETERS = os.path.join('config', 'parameters.csv')
 
 def main(parameters: List, replicates: int):
 
@@ -55,6 +75,7 @@ def main(parameters: List, replicates: int):
 if __name__ == "__main__":
 
     replicates = sys.argv[1]
-    with open(PARAMETERS, 'r') as csv_file:
+    parameters_file = sys.argv[2]
+    with open(parameters_file, 'r') as csv_file:
         reader = list(csv.DictReader(csv_file))
     main(reader, int(replicates))

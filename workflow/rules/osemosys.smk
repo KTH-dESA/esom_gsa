@@ -1,15 +1,13 @@
 wildcard_constraints:
     modelrun="\d+"
 
-
-print(["results/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index])
-
 rule copy_datapackage:
     message: "Copying and modifying datapackage for '{output.folder}'"
     input:
         datapackage=config['datapackage'],
         sample="modelruns/{model_run}_sample.txt"
     log: "results/copy_datapackage_{model_run}.log"
+    conda: "../envs/otoole.yaml"
     output:
         folder=directory("results/gcc_india_{model_run, \d+}"),
         dummy="results/gcc_india_{model_run, \d+}/datapackage.json",
@@ -58,7 +56,7 @@ rule solve_lp:
     threads:
         1
     shell:
-        "cbc {input} -dualpivot pesteep -psi 1.0 -pertv 52 -duals solve -solu {output} > {log}"
+        "cbc {input} solve -solu {output} > {log}"
 
 rule process_solution:
     message: "Processing CBC solution for '{output}'"

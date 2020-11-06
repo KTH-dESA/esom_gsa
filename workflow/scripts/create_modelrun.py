@@ -1,4 +1,26 @@
-"""Example data processing script
+"""Creates model runs from a sample file and master model datapackage
+
+Arguments
+---------
+<input_filepath>
+    Path to the master model datapackage
+<output_filepath>
+    Path to the new model file
+<sample_filepath>
+    Path the sample file
+
+The expected format of the sample file is a CSV file with the following structure::
+
+    name,indexes,value,action,interpolation_index
+    CapitalCost,"GLOBAL,GCPSOUT0N",1024.3561663863075,interpolate,YEAR
+
+It is very similar to the overall parameter.csv configuration file, except holds a sample value
+rather than a range
+
+To run this script on the command line, use the following::
+
+    python create_modelrun.py <input_filepath> <output_filepath> <sample_filepath>
+
 """
 import sys
 
