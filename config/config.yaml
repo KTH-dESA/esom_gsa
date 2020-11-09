@@ -13,4 +13,4 @@ parameters: config/parameters_simplicity.csv
 model_file: ../osemosys/OSeMOSYS_GNU_MathProg/src/osemosys_fast.txt
 
 # Sampling - how large should the sample be?
-replicates: 10
+replicates: 2

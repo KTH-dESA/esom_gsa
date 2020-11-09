@@ -42,7 +42,7 @@ rule extract_results:
     log: "results/log/extract_{agg_result_file}.log"
     output: "results/{agg_result_file}.csv"
     conda: "envs/pandas.yaml"
-    script: "scripts/interconnectoractivity.py"
+    script: "scripts/extract_results.py"
 
 rule clean:
     shell:
