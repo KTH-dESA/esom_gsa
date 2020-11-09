@@ -35,21 +35,28 @@ config.update(strategy.input_config)
 logger.debug(config)
 config = add_dtypes(config)
 
+def get_model_run_scenario_from_filepath(filename: str):
+    """Parses filepath to extract useful bits
+
+    "results/{{scenario}}/{modelrun}/{input_file}.csv"
+    """
+    filepath, name = os.path.split(filename)
+    result_param = os.path.splitext(name)[0]
+    scenario_path, model_run = os.path.split(filepath)
+    scenario = os.path.split(scenario_path)[1]
+    return {'model_run': model_run, 'scenario': scenario,
+            'result_param': result_param, 'filepath': filepath}
+
 def main(input_files: List, output_file: str, parameter: Tuple):
     """Iterate over list of CSV files, extract defined results, write to output file
     """
     aggregated_results = []
     for filename in input_files:
 
-        filepath, name = os.path.split(filename)
-        model_run = os.path.split(filepath)[1]
+        bits = get_model_run_scenario_from_filepath(filename)
 
-        result_param = os.path.splitext(name)[0]
-
-        column_dtypes = config[result_param]['index_dtypes']
-        # column_dtypes = {"REGION": str, "TECHNOLOGY": str, "FUEL": str, 'YEAR': int, 'VALUE': float}
-        df_index = config[result_param]['indices']
-        # df_index = ["REGION", "TECHNOLOGY", "FUEL", 'YEAR']
+        column_dtypes = config[bits['result_param']]['index_dtypes']
+        df_index = config[bits['result_param']]['indices']
 
         df = pd.read_csv(filename
             ).astype(column_dtypes
@@ -57,13 +64,14 @@ def main(input_files: List, output_file: str, parameter: Tuple):
 
         try:
             interconnector = df.xs(parameter, drop_level=False)
-            interconnector['MODELRUN'] = model_run
+            interconnector['SCENARIO'] = bits['scenario']
+            interconnector['MODELRUN'] = bits['model_run']
             interconnector = interconnector.reset_index(
-                ).set_index(['MODELRUN'] + df_index)
+                ).set_index(['SCENARIO', 'MODELRUN'] + df_index)
 
             aggregated_results.append(interconnector)
         except KeyError:
-            logger.warning("No results found for %s in %s", parameter, filepath)
+            logger.warning("No results found for %s in %s", parameter, bits['filepath'])
 
     results = pd.concat(aggregated_results)
 

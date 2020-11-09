@@ -30,7 +30,9 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def main(parameters: List, replicates: int):
+def main(parameters: List, output_files: List):
+
+    replicates = len(output_files)
 
     problem = {}
     problem['num_vars'] = len(parameters)
@@ -55,8 +57,7 @@ def main(parameters: List, replicates: int):
     sample = latin.sample(problem, replicates, seed=42)
 
     for model_run, row in enumerate(sample):
-        filename = "{}_sample.txt".format(model_run)
-        filepath = os.path.join('modelruns', filename)
+        filepath = output_files[model_run]
         with open(filepath, 'w') as csvfile:
 
             fieldnames = ['name', 'indexes', 'value', 'action', 'interpolation_index']
@@ -74,8 +75,8 @@ def main(parameters: List, replicates: int):
 
 if __name__ == "__main__":
 
-    replicates = sys.argv[1]
-    parameters_file = sys.argv[2]
+    output_files = sys.argv[2:]
+    parameters_file = sys.argv[1]
     with open(parameters_file, 'r') as csv_file:
         reader = list(csv.DictReader(csv_file))
-    main(reader, int(replicates))
+    main(reader, output_files)

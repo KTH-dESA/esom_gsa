@@ -1,8 +1,13 @@
 import pandas as pd
 configfile: "config/config.yaml"
 
+wildcard_constraints:
+    agg_result_file="[a-zA-Z_\-]+",
+    scenario="\d+",
+    model_run="\d+"
+
 RESULTS = pd.read_csv(config["result_params"]).set_index('name')
-# SCENARIOS = pd.read_csv(config["scenarios"]).set_index('name')
+SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
 MODELRUNS = range(config['replicates'])
 AGG_RESULTS = pd.read_csv(config["agg_results"])
 
@@ -16,15 +21,16 @@ rule create_sample:
     params:
         replicates=config['replicates'],
         parameters=config['parameters']
-    output: expand('modelruns/{x}_sample.txt', x=range(config['replicates']))
+    output: expand("modelruns/{{scenario}}/{x}_sample.txt", x=range(config['replicates']))
     conda: "envs/sample.yaml"
-    log: "results/create_sample.log"
+    log: "results/create_{scenario}_sample.log"
     shell:
-        "python workflow/scripts/create_sample.py {params.replicates} {params.parameters}"
+        "python workflow/scripts/create_sample.py {params.parameters} {output}"
 
 def get_input(wildcards):
     input_file = AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['resultfile']
-    return ["results/{modelrun}/{input_file}.csv".format(modelrun=x, input_file=input_file) for x in MODELRUNS]
+    return ["results/{scenario}/{modelrun}/{input_file}.csv".format(
+        modelrun=x, input_file=input_file, scenario=y) for x in MODELRUNS for y in SCENARIOS.index]
 
 def get_indices(wildcards):
     return AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['indices']
