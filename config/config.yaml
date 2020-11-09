@@ -1,21 +1,16 @@
-# Populate the scenarios.csv file with a list of scenario names 
-# An (OSeMOSYS datapackage with scenario name suffix must exist)
-# scenarios: config/scenarios.csv
+# Populate the scenarios.csv file with a list of scenario names
+# and path (description optional)
+datapackage: config/scenarios.csv
 
 # Tell the workflow which model results to plot
 result_params: config/results.csv
+agg_results: config/agg_results.csv
 
 # Define the uncertain parameters used to define the Monte Carlo sample
-parameters: config/parameters.csv
-
-# Path to datapackage of OSeMOSYS model
-datapackage: ../gui_osemosys/combined_model/combined_datapackage/datapackage.json
+parameters: config/parameters_simplicity.csv
 
 # Model version
 model_file: ../osemosys/OSeMOSYS_GNU_MathProg/src/osemosys_fast.txt
-osemosys_version: abdcef99128bf9632cb25cffdf037dc4dcd9dbab
-
-solver: cbc # choices: currently only cbc. glpk, gurobi and cplex coming...
 
 # Sampling - how large should the sample be?
-replicates: 8
+replicates: 10

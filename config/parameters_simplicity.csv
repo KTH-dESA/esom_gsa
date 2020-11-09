@@ -1,0 +1,2 @@
+name,group,indexes,min_value,max_value,dist,interpolation_index,action
+CapitalCost,,"SIMPLICITY,NGCC",500,1100,unif,YEAR,interpolate

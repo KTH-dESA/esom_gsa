@@ -1,0 +1,4 @@
+resultfile,indices,filename
+ProductionByTechnologyAnnual,"SIMPLICITY,NGCC,SEC_EL",electricity_from_gas
+ProductionByTechnologyAnnual,"SIMPLICITY,RIVER_2,WATIN",water_from_rivers
+AnnualEmissions,"SIMPLICITY",emissions
