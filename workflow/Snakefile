@@ -1,20 +1,48 @@
 import pandas as pd
 configfile: "config/config.yaml"
 
+wildcard_constraints:
+    agg_result_file="[a-zA-Z_\-]+",
+    scenario="\d+",
+    model_run="\d+"
+
 RESULTS = pd.read_csv(config["result_params"]).set_index('name')
-# SCENARIOS = pd.read_csv(config["scenarios"]).set_index('name')
+SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
+MODELRUNS = range(config['replicates'])
+AGG_RESULTS = pd.read_csv(config["agg_results"])
 
 include: "rules/osemosys.smk"
 
 rule all:
-    input: expand("results/{modelrun}/{results}.pdf", modelrun=range(config['replicates']), results=RESULTS.index)
+    input: expand("results/{agg_result_file}.csv", agg_result_file=AGG_RESULTS['filename'])
     message: "Running pipeline to generate the files '{input}'"
 
 rule create_sample:
-    params: replicates=config['replicates']
-    output: expand('modelruns/{x}_sample.txt', x=range(config['replicates']))
+    params:
+        replicates=config['replicates'],
+        parameters=config['parameters']
+    output: expand("modelruns/{{scenario}}/{x}_sample.txt", x=range(config['replicates']))
+    conda: "envs/sample.yaml"
+    log: "results/create_{scenario}_sample.log"
     shell:
-        "python workflow/scripts/create_sample.py {params.replicates}"
+        "python workflow/scripts/create_sample.py {params.parameters} {output}"
+
+def get_input(wildcards):
+    input_file = AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['resultfile']
+    return ["results/{scenario}/{modelrun}/{input_file}.csv".format(
+        modelrun=x, input_file=input_file, scenario=y) for x in MODELRUNS for y in SCENARIOS.index]
+
+def get_indices(wildcards):
+    return AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['indices']
+
+rule extract_results:
+    input: get_input
+    params:
+        parameter=get_indices
+    log: "results/log/extract_{agg_result_file}.log"
+    output: "results/{agg_result_file}.csv"
+    conda: "envs/pandas.yaml"
+    script: "scripts/extract_results.py"
 
 rule clean:
     shell:
@@ -27,6 +55,7 @@ rule clean_plots:
 rule plot:
     input: "results/{modelrun}/{result}.csv"
     output: "results/{modelrun}/{result}.pdf"
+    conda: "envs/plot.yaml"
     message: "Generating plot using '{input}' and writing to '{output}'"
     shell:
         "python workflow/scripts/plot_results.py {input} {output}"
@@ -39,5 +68,6 @@ rule make_dag:
 rule plot_dag:
     input: "dag.txt"
     output: "dag.png"
+    conda: "envs/dag.yaml"
     shell:
         "dot -Tpng {input} > dag.png && open dag.png"

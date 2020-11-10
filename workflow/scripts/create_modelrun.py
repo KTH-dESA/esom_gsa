@@ -1,4 +1,26 @@
-"""Example data processing script
+"""Creates model runs from a sample file and master model datapackage
+
+Arguments
+---------
+<input_filepath>
+    Path to the master model datapackage
+<output_filepath>
+    Path to the new model file
+<sample_filepath>
+    Path the sample file
+
+The expected format of the sample file is a CSV file with the following structure::
+
+    name,indexes,value,action,interpolation_index
+    CapitalCost,"GLOBAL,GCPSOUT0N",1024.3561663863075,interpolate,YEAR
+
+It is very similar to the overall parameter.csv configuration file, except holds a sample value
+rather than a range
+
+To run this script on the command line, use the following::
+
+    python create_modelrun.py <input_filepath> <output_filepath> <sample_filepath>
+
 """
 import sys
 
@@ -14,7 +36,7 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def process_data(df: pd.DataFrame, index: List, value: float, 
+def process_data(df: pd.DataFrame, index: List, value: float,
                  first_year: int, last_year: int) -> pd.DataFrame:
     """Interpolate data between min and max years
     """
@@ -45,7 +67,7 @@ class TestInterpolate:
 
         df = pd.DataFrame(data, columns=['REGION', 'TECHNOLOGY', 'YEAR', 'VALUE']
                           ).set_index(['REGION', 'TECHNOLOGY', 'YEAR']).astype({'VALUE': float})
-        
+
         actual = process_data(df, index, value, 2015, 2020)
 
         data = [
@@ -64,8 +86,8 @@ class TestInterpolate:
 
 
 def modify_parameters(
-        model_params: Dict[str, pd.DataFrame], 
-        parameters: List[Dict[str, Union[str, int, float]]], 
+        model_params: Dict[str, pd.DataFrame],
+        parameters: List[Dict[str, Union[str, int, float]]],
         config: Dict):
     """
     """
@@ -93,12 +115,12 @@ def modify_parameters(
                 # Create new object and update inplace
                 data = [index + [x] + [value] for x in range(first_year, end_year + 1, 1)]
             columns = config[name]['indices']
-            new_values = pd.DataFrame(data, columns=columns + ['VALUE']).astype(config[name]['index_dtypes']).set_index(columns)   
+            new_values = pd.DataFrame(data, columns=columns + ['VALUE']).astype(config[name]['index_dtypes']).set_index(columns)
         if all(new_values.index.isin(model_params[name].index)):
-            print("Updating values for {} in {}".format(index, name))
+            logger.info("Updating values for {} in {}".format(index, name))
             model_params[name].update(new_values)
         else:
-            print("Appending values for {} in {}".format(index, name))
+            logger.info("Appending values for {} in {}".format(index, name))
             model_params[name] = model_params[name].append(new_values)
 
     return model_params
@@ -135,7 +157,7 @@ class TestModifyParameters:
             ["GLOBAL","AEIELEI0H",1,2015,1.0],
             ["GLOBAL","AEIELEI0H",1,2016,1.0],
             ["GLOBAL","AEIELEI0H",1,2017,1.0],
-            ["GLOBAL","AEIELEI0H",1,2018,1.0],            
+            ["GLOBAL","AEIELEI0H",1,2018,1.0],
         ], columns=var_cost_cols).astype(
                 {'REGION': str,'TECHNOLOGY': str,'MODE_OF_OPERATION': int,'YEAR': int,'VALUE': float}
             ).set_index(var_cost_index)
@@ -163,5 +185,4 @@ if __name__ == "__main__":
     else:
         with open(sys.argv[3], 'r') as csv_file:
             sample = list(csv.DictReader(csv_file))
-        print(sample)
         main(sys.argv[1], sys.argv[2], sample)

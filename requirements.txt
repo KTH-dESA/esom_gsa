@@ -1,1 +1,1 @@
-otoole>=0.8.6
+otoole>=0.9.0b1
