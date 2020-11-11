@@ -14,7 +14,7 @@ AGG_RESULTS = pd.read_csv(config["agg_results"])
 include: "rules/osemosys.smk"
 
 rule all:
-    input: expand("results/{agg_result_file}.csv", agg_result_file=AGG_RESULTS['filename']), "results/hourly_demand.csv" 
+    input: expand("results/{agg_result_file}.csv", agg_result_file=AGG_RESULTS['filename']), "results/hourly_demand.csv", "results/hourly_generation.csv"  
     message: "Running pipeline to generate the files '{input}'"
 
 rule create_sample:
@@ -52,6 +52,12 @@ rule calculate_hourly_demand:
     output: "results/hourly_demand.csv"
     conda: "envs/pandas.yaml"
     script: "scripts/calculate_hourly_demand.py"
+
+rule calculate_hourly_generation:
+    input: "results/annual_generation.csv"
+    output: "results/hourly_generation.csv"
+    conda: "envs/pandas.yaml"
+    script: "scripts/calculate_hourly_generation.py"
 
 rule clean:
     shell:

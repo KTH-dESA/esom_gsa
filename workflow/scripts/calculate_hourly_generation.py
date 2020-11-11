@@ -14,18 +14,21 @@ def write_results(df, output_filepath):
     pass
 
 
-# Calculate hourly demand
-def calculate_hourly_demand(df):
-    # Create lists of commodities, demands, and years
-    
-    commodities = list(df.FUEL.unique())
-    demands = [x for x in commodities if x[4:5] in ['3', '4']]
+# Calculate hourly generation
+def calculate_hourly_generation(df):
+    # Create lists of generation and years
+
+    df = df.loc[df.TECHNOLOGY.str[2:3] == 'P']
+    generation = list(df.FUEL.unique())
     years = list(df.YEAR.unique())
 
     df['SEASON'] = df['TIMESLICE'].str[1:2].astype(int)
     df['HOUR'] = df['TIMESLICE'].str[3:].astype(int)
     df['YEAR'] = df['YEAR'].astype(int)
-    
+
+    df.TECHNOLOGY = df.TECHNOLOGY.str[3:5]
+    df.VALUE = df.VALUE.astype('float64')
+
     # Create dictionaries for season-month-days associations
     seasons_months_days = pd.read_csv('config/ts_definition.csv',
                                       encoding='latin-1')
@@ -37,7 +40,7 @@ def calculate_hourly_demand(df):
     hours = list(range(1, 25))
 
     # Create template for hourly demand
-    df_ts_template = pd.DataFrame(list(itertools.product(demands,
+    df_ts_template = pd.DataFrame(list(itertools.product(generation,
                                                          months,
                                                          hours,
                                                          years)
@@ -54,7 +57,6 @@ def calculate_hourly_demand(df):
                   df_ts_template,
                   how='right',
                   on=['FUEL', 'SEASON', 'HOUR', 'YEAR']).dropna()
-    df['FUEL'] = df['FUEL'].str[0:2]
     df['VALUE'] = (df['VALUE'].mul(1e6))/(df['DAYS'].mul(3600))
     df.drop(['DAYS','SEASON'], axis=1, inplace=True) 
     df['MONTH'] = pd.Categorical(df['MONTH'], categories=months, ordered=True)
@@ -64,6 +66,7 @@ def calculate_hourly_demand(df):
     df = df[['SCENARIO',
              'MODELRUN',
              'REGION',
+             'TECHNOLOGY',
              'FUEL',
              'TIMESLICE',
              'MONTH',
@@ -77,7 +80,7 @@ def calculate_hourly_demand(df):
 def main(input_filepath, output_filepath):
     df = read_results(input_filepath)
 
-    processed_results = calculate_hourly_demand(df)
+    processed_results = calculate_hourly_generation(df)
 
     write_results(processed_results, output_filepath)
 
