@@ -112,7 +112,7 @@ Use these master models to define macro scenarios - e.g. forcing in and out a ke
 
 ## Running the workflow
 
-To run the workflow, using the command `snakemake --use-conda --cores 4--resources mem_mb=16000 disk_mb=30000`
+To run the workflow, using the command `snakemake --use-conda --cores 4 --resources mem_mb=16000 disk_mb=30000`
 
 ## Plotting the workflow
 
