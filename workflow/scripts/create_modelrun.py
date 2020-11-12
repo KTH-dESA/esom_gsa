@@ -24,7 +24,7 @@ To run this script on the command line, use the following::
 """
 import sys
 
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple
 
 import csv
 import pandas as pd
@@ -41,7 +41,7 @@ def process_data(df: pd.DataFrame, index: List, value: float,
     """Interpolate data between min and max years
     """
     # df.index = df.index.sortlevel(level=0)[0]
-    indexes = df.index
+    indexes = df.index.names
     df = df.loc[tuple(index + [first_year]):tuple(index + [last_year])]
     df = df.reset_index().set_index('YEAR')
     df.loc[last_year, 'VALUE'] = value
@@ -86,6 +86,23 @@ class TestInterpolate:
         pd.testing.assert_frame_equal(actual, expected)
 
 
+def get_types_from_tuple(index: list, param: str, config: Dict) -> Tuple:
+    depth = len(index)
+    names = config[param]['indices'][0:depth]
+    typed_index = []
+    dtypes = config[param]['index_dtypes']
+    for name, element in zip(names, index):
+        this_type = dtypes[name]
+        if this_type == 'str':
+            typed_index.append(str(element))
+        elif this_type == 'float':
+            typed_index.append(float(element))
+        elif this_type == 'int':
+            typed_index.append(int(element))
+
+    return typed_index
+
+
 def modify_parameters(
         model_params: Dict[str, pd.DataFrame],
         parameters: List[Dict[str, Union[str, int, float]]],
@@ -99,13 +116,15 @@ def modify_parameters(
 
         name = parameter['name']
         df = model_params[name]
-        df.index = df.index.sortlevel(level=0)[0]
-
-        index = parameter['indexes'].split(",")
+        # df = df.sort_index()
+        # df.index = df.index.sortlevel()[0]
+        untyped_index = parameter['indexes'].split(",")
+        index = get_types_from_tuple(untyped_index, name, config)
         value = parameter['value']
         action = parameter['action']
         inter_index = parameter['interpolation_index']
         if action == 'interpolate':
+            df = df.astype(str)
             snippet = df.xs(tuple(index), drop_level=False)
             new_values = process_data(snippet, index, value, first_year, end_year)
         elif action == 'fixed':
@@ -129,10 +148,22 @@ def modify_parameters(
 
 class TestModifyParameters:
 
+    def test_get_types_from_tuple(self):
+        index = ["GLOBAL","AEIELEI0H","1"]
+        param = 'VariableCost'
+        var_cost_index = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR']
+        index_dtypes = {'REGION': 'str','TECHNOLOGY': 'str','MODE_OF_OPERATION': 'int','YEAR': 'int','VALUE': 'float'}
+        config = {'VariableCost': {'indices': var_cost_index,
+                                   'index_dtypes': index_dtypes}}
+        actual = get_types_from_tuple(index, param, config)
+        expected = ["GLOBAL","AEIELEI0H",1]
+        assert actual == expected
+
     def test_fixed_year(self):
         name = 'VariableCost'
         var_cost_cols = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR','VALUE']
         var_cost_index = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR']
+        index_dtypes = {'REGION': 'str','TECHNOLOGY': 'str','MODE_OF_OPERATION': 'int','YEAR': 'int','VALUE': 'float'}
         data = [
             ["GLOBAL","AEIELEI0H",1,2015,100.0],
             ["GLOBAL","AEIELEI0H",1,2016,100.0],
@@ -141,8 +172,8 @@ class TestModifyParameters:
         ]
 
         model_params = {
-            'VariableCost': pd.DataFrame(data=[], columns=var_cost_cols).astype(
-                {'REGION': str,'TECHNOLOGY': str,'MODE_OF_OPERATION': int,'YEAR': int,'VALUE': float}
+            'VariableCost': pd.DataFrame(data=data, columns=var_cost_cols).astype(
+                index_dtypes
             ).set_index(var_cost_index),
             'YEAR': pd.DataFrame(data=[2015, 2016, 2017, 2018], columns=['VALUE'])}
         parameters = [{'name': 'VariableCost',
@@ -152,7 +183,8 @@ class TestModifyParameters:
                        'interpolation_index': 'YEAR',
                        'action': 'fixed'}]
 
-        config = {'VariableCost': {'indices': var_cost_index}}
+        config = {'VariableCost': {'indices': var_cost_index,
+                                   'index_dtypes': index_dtypes}}
         actual = modify_parameters(model_params, parameters, config)
         expected = pd.DataFrame(data=[
             ["GLOBAL","AEIELEI0H",1,2015,1.0],
@@ -160,7 +192,45 @@ class TestModifyParameters:
             ["GLOBAL","AEIELEI0H",1,2017,1.0],
             ["GLOBAL","AEIELEI0H",1,2018,1.0],
         ], columns=var_cost_cols).astype(
-                {'REGION': str,'TECHNOLOGY': str,'MODE_OF_OPERATION': int,'YEAR': int,'VALUE': float}
+                {'REGION': 'str','TECHNOLOGY': 'str','MODE_OF_OPERATION': 'int','YEAR': 'int','VALUE': 'float'}
+            ).set_index(var_cost_index)
+        pd.testing.assert_frame_equal(actual[name], expected)
+
+    def test_interpolate(self):
+        name = 'VariableCost'
+        var_cost_cols = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR','VALUE']
+        var_cost_index = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR']
+        index_dtypes = {'REGION': 'str','TECHNOLOGY': 'str','MODE_OF_OPERATION': 'int','YEAR': 'int','VALUE': 'float'}
+        data = [
+            ["GLOBAL","AEIELEI0H",1,2015,100.0],
+            ["GLOBAL","AEIELEI0H",1,2016,100.0],
+            ["GLOBAL","AEIELEI0H",1,2017,100.0],
+            ["GLOBAL","AEIELEI0H",1,2018,100.0],
+        ]
+
+        model_params = {
+            'VariableCost': pd.DataFrame(data=data,
+                                         columns=var_cost_cols
+                ).astype(index_dtypes
+                ).set_index(var_cost_index),
+            'YEAR': pd.DataFrame(data=[2015, 2016, 2017, 2018], columns=['VALUE'])}
+        parameters = [{'name': 'VariableCost',
+                       'indexes': "GLOBAL,AEIELEI0H,1",
+                       'value':  1,
+                       'dist': 'unif',
+                       'interpolation_index': 'YEAR',
+                       'action': 'interpolate'}]
+
+        config = {'VariableCost': {'indices': var_cost_index,
+                                   'index_dtypes': index_dtypes}}
+        actual = modify_parameters(model_params, parameters, config)
+        expected = pd.DataFrame(data=[
+            ["GLOBAL","AEIELEI0H",1,2015,100.0],
+            ["GLOBAL","AEIELEI0H",1,2016,67.0],
+            ["GLOBAL","AEIELEI0H",1,2017,34.0],
+            ["GLOBAL","AEIELEI0H",1,2018,1.0],
+        ], columns=var_cost_cols).astype(
+                index_dtypes
             ).set_index(var_cost_index)
         pd.testing.assert_frame_equal(actual[name], expected)
 
