@@ -41,12 +41,13 @@ def process_data(df: pd.DataFrame, index: List, value: float,
     """Interpolate data between min and max years
     """
     # df.index = df.index.sortlevel(level=0)[0]
+    indexes = df.index
     df = df.loc[tuple(index + [first_year]):tuple(index + [last_year])]
     df = df.reset_index().set_index('YEAR')
     df.loc[last_year, 'VALUE'] = value
     df.loc[first_year + 1:last_year - 1, 'VALUE'] = np.nan
     result = df.astype({'VALUE':'float'}).interpolate(method='values')
-    return result.reset_index().set_index(['REGION', 'TECHNOLOGY', 'YEAR'])
+    return result.reset_index().set_index(indexes)
 
 
 class TestInterpolate:
