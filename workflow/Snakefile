@@ -14,7 +14,8 @@ AGG_RESULTS = pd.read_csv(config["agg_results"])
 include: "rules/osemosys.smk"
 
 rule all:
-    input: expand("results/{agg_result_file}.csv", agg_result_file=AGG_RESULTS['filename'])
+    input:
+        expand("results/{agg_result_file}.csv", agg_result_file=AGG_RESULTS['filename'])
     message: "Running pipeline to generate the files '{input}'"
 
 rule create_sample:
@@ -41,7 +42,7 @@ rule extract_results:
         parameter=get_indices
     log: "results/log/extract_{agg_result_file}.log"
     output: "results/{agg_result_file}.csv"
-    conda: "envs/pandas.yaml"
+    conda: "envs/otoole.yaml"
     script: "scripts/extract_results.py"
 
 rule clean:
