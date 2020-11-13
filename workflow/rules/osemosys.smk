@@ -1,3 +1,5 @@
+import json
+
 wildcard_constraints:
     modelrun="\d+",
     scenarios="\d+"
@@ -13,17 +15,18 @@ rule copy_datapackage:
     log: "results/copy_datapackage_{scenario}_{model_run}.log"
     conda: "../envs/otoole.yaml"
     output:
-        folder=directory("results/{scenario}/gcc_india_{model_run, \d+}"),
-        dummy="results/{scenario}/gcc_india_{model_run, \d+}/datapackage.json",
+        folder=directory("results/{scenario}/model_{model_run, \d+}"),
+        dummy="results/{scenario}/model_{model_run, \d+}/datapackage.json",
     shell:
         "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
 
 rule generate_datafile:
-    message: "Modifying data and generating datafile for '{output}'"
+    message: "Generating datafile for '{output}'"
     input:
-        datapackage="results/{scenario}/gcc_india_{model_run}/datapackage.json"
+        datapackage="results/{scenario}/model_{model_run}/datapackage.json"
     output:
-        "modelruns/{scenario}/gcc_india_{model_run}.txt"
+        "modelruns/{scenario}/model_{model_run}.txt"
+    conda: "../envs/otoole.yaml"
     log:
         "results/otoole_{scenario}_{model_run}.log"
     shell:
@@ -32,7 +35,7 @@ rule generate_datafile:
 rule generate_lp_file:
     message: "Generating the LP file for '{output}'"
     input:
-        data=expand("modelruns/{{scenario}}/gcc_india_{{model_run}}.txt"),
+        data=expand("modelruns/{{scenario}}/model_{{model_run}}.txt"),
         model=config['model_file']
     resources:
         mem_mb=5000,
@@ -41,10 +44,11 @@ rule generate_lp_file:
         temporary("results/{scenario}/{model_run}.lp")
     log:
         "results/glpsol_{scenario}_{model_run}.log"
+    conda: "../envs/osemosys.yaml"
     threads:
         1
     shell:
-        "glpsol -m {input.model} -d {input.data} --wlp {output} --check --log {log} 2> {log}"
+        "glpsol -m {input.model} -d {input.data} --wlp {output} --check > {log}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}'"
@@ -60,16 +64,48 @@ rule solve_lp:
     threads:
         1
     shell:
-        "cbc {input} solve -solu {output} > {log}"
+        "cbc {input} solve -sec 1500 -solu {output} > {log}"
 
 rule process_solution:
     message: "Processing CBC solution for '{output}'"
     input:
         solution="results/{scenario}/{model_run}.sol",
-        data="results/{scenario}/gcc_india_{model_run}/datapackage.json"
+        data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
     log: "results/process_solution_{scenario}_{model_run}.log"
     params:
         folder="results/{scenario}/{model_run}"
     shell:
         "mkdir -p {params.folder} && otoole -v results cbc csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
+
+# rule solve_gurobi:
+#     message: "Solving the LP for '{output}' using Gurobi"
+#     input:
+#         "results/{scenario}/{model_run}.lp"
+#     output:
+#         json="results/{scenario}/{model_run}.json",
+#         solution="results/{scenario}/{model_run}.sol",
+#     log:
+#         "results/solver_{scenario}_{model_run}.log"
+#     params:
+#         ilp="results/{scenario}/{model_run}.ilp"
+#     resources:
+#         mem_mb=3000,
+#         disk_mb=33
+#     threads:
+#         1
+#     shell:
+#         "gurobi_cl OutputFlag=0 Method=2 Threads={threads} ResultFile={output.solution} LogFile={log} ResultFile={output.json} ResultFile={params.ilp} {input} 2> {log}"
+
+# rule process_solution:
+#     message: "Processing Gurobi solution for '{output}'"
+#     input:
+#         solution="results/{scenario}/{model_run}.sol",
+#         data="results/{scenario}/model_{model_run}/datapackage.json"
+#     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
+#     conda: "../envs/otoole.yaml"
+#     log: "results/process_solution_{scenario}_{model_run}.log"
+#     params:
+#         folder="results/{scenario}/{model_run}"
+#     shell:
+#         "mkdir -p {params.folder} && otoole -v results gurobi csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"

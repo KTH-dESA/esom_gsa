@@ -5,6 +5,7 @@
 .snakemake
 
 # Workflow
+config
 modelruns
 processed_data
 results
