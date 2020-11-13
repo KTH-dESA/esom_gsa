@@ -116,16 +116,14 @@ def modify_parameters(
 
         name = parameter['name']
         df = model_params[name]
-        # df = df.sort_index()
-        # df.index = df.index.sortlevel()[0]
         untyped_index = parameter['indexes'].split(",")
         index = get_types_from_tuple(untyped_index, name, config)
         value = parameter['value']
         action = parameter['action']
         inter_index = parameter['interpolation_index']
         if action == 'interpolate':
-            df = df.astype(str)
-            snippet = df.xs(tuple(index), drop_level=False)
+            df2 = df.sort_index()
+            snippet = df2.xs(tuple(index), drop_level=False)
             new_values = process_data(snippet, index, value, first_year, end_year)
         elif action == 'fixed':
             if inter_index == 'None':
