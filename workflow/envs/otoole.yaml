@@ -6,4 +6,4 @@ dependencies:
   - python=3
   - numpy
   - pip:
-    - otoole==v0.10.0b0
+    - otoole>=v0.10
