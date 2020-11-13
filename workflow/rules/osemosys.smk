@@ -21,7 +21,7 @@ rule copy_datapackage:
         "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
 
 rule generate_datafile:
-    message: "Modifying data and generating datafile for '{output}'"
+    message: "Generating datafile for '{output}'"
     input:
         datapackage="results/{scenario}/model_{model_run}/datapackage.json"
     output:
