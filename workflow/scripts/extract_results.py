@@ -8,6 +8,7 @@ workflow and pulls the arguments for the ``main()`` function directly from
 object passed into this module at run time.
 """
 import pandas as pd
+import pyarrow
 from typing import List, Tuple, Dict
 from otoole.input import Strategy
 import os
@@ -75,7 +76,8 @@ def main(input_files: List, output_file: str, parameter: Tuple):
 
     results = pd.concat(aggregated_results)
 
-    results.to_csv(output_file)
+    #results.to_csv(output_file)
+    results.to_parquet(output_file)
 
 # if __name__ == "__main__":
 #     main(sys.argv[2:], sys.argv[1])
