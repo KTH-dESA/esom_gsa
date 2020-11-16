@@ -46,19 +46,19 @@ rule extract_results:
     params:
         parameter = get_indices
     log: "results/log/extract_{agg_result_file}.log"
-    output: "results/{agg_result_file}.csv"
+    output: "results/{agg_result_file}.parquet"
     conda: "envs/otoole.yaml"
     script: "scripts/extract_results.py"
 
 rule calculate_hourly_demand:
-    input: "results/annual_demand.csv"
-    output: "results/hourly_demand.csv"
+    input: "results/annual_demand.parquet"
+    output: "results/hourly_demand.parquet"
     conda: "envs/pandas.yaml"
     script: "scripts/calculate_hourly_demand.py"
 
 rule calculate_hourly_generation:
-    input: "results/annual_generation.csv"
-    output: "results/hourly_generation.csv"
+    input: "results/annual_generation.parquet"
+    output: "results/hourly_generation.parquet"
     conda: "envs/pandas.yaml"
     script: "scripts/calculate_hourly_generation.py"
 
