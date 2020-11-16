@@ -19,6 +19,7 @@ def calculate_hourly_generation(df):
     # Create lists of generation and years
 
     df = df.loc[df.TECHNOLOGY.str[2:3] == 'P']
+    df = df.loc[df.FUEL.str[4:7]] != '0R0']
     generation = list(df.FUEL.unique())
     years = list(df.YEAR.unique())
 
