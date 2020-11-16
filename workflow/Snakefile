@@ -15,7 +15,7 @@ include: "rules/osemosys.smk"
 
 rule all:
     input: 
-        expand("results/{agg_result_file}.csv", agg_result_file=AGG_RESULTS['filename']),
+        expand("results/{agg_result_file}.parquet", agg_result_file=AGG_RESULTS['filename']),
         "results/hourly_demand.parquet", 
         "results/hourly_generation.parquet"  
     message: "Running pipeline to generate the files '{input}'"
