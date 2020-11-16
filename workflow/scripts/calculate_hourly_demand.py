@@ -1,5 +1,6 @@
 import pandas as pd
 import itertools
+import pyarrow
 
 
 def read_results(input_filepath):
@@ -10,7 +11,8 @@ def read_results(input_filepath):
 def write_results(df, output_filepath):
     """Write out aggregated results to disk
     """
-    df.to_csv(output_filepath, index=None)
+    #df.to_csv(output_filepath, index=None)
+    df.to_parquet(output_filepath, index=None)
     pass
 
 
