@@ -5,3 +5,4 @@ dependencies:
   - pandas
   - python=3
   - seaborn
+  - pyarrow
