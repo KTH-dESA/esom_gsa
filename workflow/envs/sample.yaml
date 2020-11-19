@@ -2,4 +2,4 @@ channels:
   - conda-forge
 dependencies:
   - pip:
-    - SALib=>1.4.0b0
+    - SALib>=1.4.0b0
