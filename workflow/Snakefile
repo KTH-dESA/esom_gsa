@@ -15,9 +15,9 @@ include: "rules/osemosys.smk"
 
 rule all:
     input:
-        expand("results/{agg_result_file}.parquet", agg_result_file=AGG_RESULTS['filename']),
-        "results/hourly_demand.parquet",
-        "results/hourly_generation.parquet"
+        expand("results/{agg_result_file}.{ext}", agg_result_file=AGG_RESULTS['filename'], ext=config['filetype']),
+        expand("results/hourly_demand.{ext}", ext=config['filetype']),
+        expand("results/hourly_generation.{ext}", ext=config['filetype'])
     message: "Running pipeline to generate the files '{input}'"
 
 rule create_sample:
@@ -43,19 +43,19 @@ rule extract_results:
     params:
         parameter = get_indices
     log: "results/log/extract_{agg_result_file}.log"
-    output: "results/{agg_result_file}.parquet"
+    output: expand("results/{{agg_result_file}}.{ext}", ext=config['filetype'])
     conda: "envs/otoole.yaml"
     script: "scripts/extract_results.py"
 
 rule calculate_hourly_demand:
-    input: "results/annual_demand.parquet"
-    output: "results/hourly_demand.parquet"
+    input: expand("results/annual_demand.{ext}", ext=config['filetype'])
+    output: expand("results/hourly_demand.{ext}", ext=config['filetype'])
     conda: "envs/pandas.yaml"
     script: "scripts/calculate_hourly_demand.py"
 
 rule calculate_hourly_generation:
-    input: "results/annual_generation.parquet"
-    output: "results/hourly_generation.parquet"
+    input: expand("results/annual_generation.{ext}", ext=config['filetype'])
+    output: expand("results/hourly_generation.{ext}", ext=config['filetype'])
     conda: "envs/pandas.yaml"
     script: "scripts/calculate_hourly_generation.py"
 

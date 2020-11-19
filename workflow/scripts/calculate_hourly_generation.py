@@ -1,19 +1,7 @@
 import pandas as pd
 import itertools
 import pyarrow
-
-
-def read_results(input_filepath):
-    df = pd.read_parquet(input_filepath)
-    return df
-
-
-def write_results(df, output_filepath):
-    """Write out aggregated results to disk
-    """
-    #df.to_csv(output_filepath, index=None)
-    df.to_parquet(output_filepath, index=None)
-    pass
+from utils import read_results, write_results
 
 
 # Calculate hourly generation
@@ -61,7 +49,7 @@ def calculate_hourly_generation(df):
                   how='right',
                   on=['FUEL', 'SEASON', 'HOUR', 'YEAR']).dropna()
     df['VALUE'] = (df['VALUE'].mul(1e6))/(df['DAYS'].mul(3600))
-    df.drop(['DAYS','SEASON'], axis=1, inplace=True) 
+    df.drop(['DAYS','SEASON'], axis=1, inplace=True)
     df['MONTH'] = pd.Categorical(df['MONTH'], categories=months, ordered=True)
     df = df.sort_values(by=['YEAR', 'MONTH', 'HOUR'])
     df['SCENARIO'] = df['SCENARIO'].astype(int)

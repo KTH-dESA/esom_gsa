@@ -42,6 +42,9 @@ datapackage: config/scenarios.csv
 result_params: config/results.csv
 agg_results: config/agg_results.csv
 
+# Filetype options: 'csv' or 'parquet' or 'feather'
+filetype: csv
+
 # Define the uncertain parameters used to define the Monte Carlo sample
 parameters: config/parameters.csv
 
@@ -116,6 +119,11 @@ Use these master models to define macro scenarios - e.g. forcing in and out a ke
 ## Running the workflow
 
 To run the workflow, using the command `snakemake --use-conda --cores 4 --resources mem_mb=16000 disk_mb=30000`
+
+You can also change parts of the configuration by adding the `--config` flag, followed by the names of one
+or more of the config items. E.g.
+
+    snakemake --use-conda --cores 4 --resources mem_mb=16000 disk_mb=30000 --config filetype=parquet replicate=100
 
 ## Plotting the workflow
 

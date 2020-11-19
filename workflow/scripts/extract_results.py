@@ -14,6 +14,7 @@ from otoole.input import Strategy
 from utils import get_model_run_scenario_from_filepath, get_model_run_scenario_from_input_filepath
 import os
 import sys
+from utils import write_results, read_results
 
 from logging import getLogger
 
@@ -43,9 +44,8 @@ def main(input_files: List, output_file: str, parameter: Tuple, config: Dict):
         column_dtypes = config[bits['param']]['index_dtypes']
         df_index = config[bits['param']]['indices']
 
-        df = pd.read_csv(filename
-            ).astype(column_dtypes
-            ).set_index(df_index)
+        df = read_results(filename)
+        df = df.astype(column_dtypes).set_index(df_index)
 
         try:
             results = df.xs(parameter, drop_level=False)
@@ -60,8 +60,7 @@ def main(input_files: List, output_file: str, parameter: Tuple, config: Dict):
 
     results = pd.concat(aggregated_results)
 
-    #results.to_csv(output_file)
-    results.to_parquet(output_file)
+    write_results(results, output_file, True)
 
 
 strategy = Strategy()
