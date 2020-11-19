@@ -53,65 +53,42 @@ rule generate_lp_file:
         "glpsol -m {input.model} -d {input.data} --wlp {output} --check > {log}"
 
 rule solve_lp:
-    message: "Solving the LP for '{output}'"
+    message: "Solving the LP for '{output}' using {config[solver]}"
     input:
         "results/{scenario}/{model_run}.lp"
     output:
-        protected("results/{scenario}/{model_run}.sol")
+        json="results/{scenario}/{model_run}.json",
+        solution="results/{scenario}/{model_run}.sol",
     log:
-        "results/cbc_{scenario}_{model_run}.log"
+        "results/solver_{scenario}_{model_run}.log"
+    params:
+        ilp="results/{scenario}/{model_run}.ilp"
     benchmark:
-        "benchmarks/cbc/{scenario}_{model_run}.tsv"
+        "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
         mem_mb=3000,
         disk_mb=33
     threads:
         1
     shell:
-        "cbc {input} solve -sec 1500 -solu {output} > {log}"
+        """
+        if [ {config[solver]} = gurobi ]
+        then
+          gurobi_cl OutputFlag=0 Method=2 Threads={threads} ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input} > {log}
+        else
+          cbc {input} solve -sec 1500 -solu {output} > {log}
+        fi
+        """
 
 rule process_solution:
-    message: "Processing CBC solution for '{output}'"
+    message: "Processing {config[solver]} solution for '{output}'"
     input:
         solution="results/{scenario}/{model_run}.sol",
         data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
+    conda: "../envs/otoole.yaml"
     log: "results/process_solution_{scenario}_{model_run}.log"
     params:
         folder="results/{scenario}/{model_run}"
     shell:
-        "mkdir -p {params.folder} && otoole -v results cbc csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
-
-# rule solve_gurobi:
-#     message: "Solving the LP for '{output}' using Gurobi"
-#     input:
-#         "results/{scenario}/{model_run}.lp"
-#     output:
-#         json="results/{scenario}/{model_run}.json",
-#         solution="results/{scenario}/{model_run}.sol",
-#     log:
-#         "results/solver_{scenario}_{model_run}.log"
-#     params:
-#         ilp="results/{scenario}/{model_run}.ilp"
-#     benchmark:
-#         "benchmarks/gurobi/{scenario}_{model_run}.tsv"
-#     resources:
-#         mem_mb=3000,
-#         disk_mb=33
-#     threads:
-#         1
-#     shell:
-#         "gurobi_cl OutputFlag=0 Method=2 Threads={threads} ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input} > {log}"
-
-# rule process_solution:
-#     message: "Processing Gurobi solution for '{output}'"
-#     input:
-#         solution="results/{scenario}/{model_run}.sol",
-#         data="results/{scenario}/model_{model_run}/datapackage.json"
-#     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
-#     conda: "../envs/otoole.yaml"
-#     log: "results/process_solution_{scenario}_{model_run}.log"
-#     params:
-#         folder="results/{scenario}/{model_run}"
-#     shell:
-#         "mkdir -p {params.folder} && otoole -v results gurobi csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
+        "mkdir -p {params.folder} && otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
