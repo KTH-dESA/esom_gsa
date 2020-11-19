@@ -1,16 +1,18 @@
 import pandas as pd
 import itertools
+import pyarrow
 
 
 def read_results(input_filepath):
-    df = pd.read_csv(input_filepath)
+    df = pd.read_parquet(input_filepath)
     return df
 
 
 def write_results(df, output_filepath):
     """Write out aggregated results to disk
     """
-    df.to_csv(output_filepath, index=None)
+    #df.to_csv(output_filepath, index=None)
+    df.to_parquet(output_filepath, index=None)
     pass
 
 
@@ -18,6 +20,7 @@ def write_results(df, output_filepath):
 def calculate_hourly_demand(df):
     # Create lists of commodities, demands, and years
     
+    df = df.reset_index()
     commodities = list(df.FUEL.unique())
     demands = [x for x in commodities if x[4:5] in ['3', '4']]
     years = list(df.YEAR.unique())

@@ -1,24 +1,27 @@
 import pandas as pd
 import itertools
+import pyarrow
 
 
 def read_results(input_filepath):
-    df = pd.read_csv(input_filepath)
+    df = pd.read_parquet(input_filepath)
     return df
 
 
 def write_results(df, output_filepath):
     """Write out aggregated results to disk
     """
-    df.to_csv(output_filepath, index=None)
+    #df.to_csv(output_filepath, index=None)
+    df.to_parquet(output_filepath, index=None)
     pass
 
 
 # Calculate hourly generation
 def calculate_hourly_generation(df):
     # Create lists of generation and years
-
+    df = df.reset_index()
     df = df.loc[df.TECHNOLOGY.str[2:3] == 'P']
+    df = df.loc[df.FUEL.str[4:7] != '0R0']
     generation = list(df.FUEL.unique())
     years = list(df.YEAR.unique())
 
