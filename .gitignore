@@ -8,6 +8,7 @@
 config
 modelruns
 processed_data
+benchmarks
 results
 *.pdf
 *.csv

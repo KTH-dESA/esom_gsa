@@ -11,6 +11,7 @@ import pandas as pd
 import pyarrow
 from typing import List, Tuple, Dict
 from otoole.input import Strategy
+from utils import get_model_run_scenario_from_filepath, get_model_run_scenario_from_input_filepath
 import os
 import sys
 
@@ -30,25 +31,8 @@ def add_dtypes(config: Dict):
             details["index_dtypes"] = dtypes
     return config
 
-strategy = Strategy()
-config = strategy.results_config.copy()
-config.update(strategy.input_config)
-logger.debug(config)
-config = add_dtypes(config)
 
-def get_model_run_scenario_from_filepath(filename: str):
-    """Parses filepath to extract useful bits
-
-    "results/{{scenario}}/{modelrun}/{input_file}.csv"
-    """
-    filepath, name = os.path.split(filename)
-    result_param = os.path.splitext(name)[0]
-    scenario_path, model_run = os.path.split(filepath)
-    scenario = os.path.split(scenario_path)[1]
-    return {'model_run': model_run, 'scenario': scenario,
-            'result_param': result_param, 'filepath': filepath}
-
-def main(input_files: List, output_file: str, parameter: Tuple):
+def main(input_files: List, output_file: str, parameter: Tuple, config: Dict):
     """Iterate over list of CSV files, extract defined results, write to output file
     """
     aggregated_results = []
@@ -56,21 +40,21 @@ def main(input_files: List, output_file: str, parameter: Tuple):
 
         bits = get_model_run_scenario_from_filepath(filename)
 
-        column_dtypes = config[bits['result_param']]['index_dtypes']
-        df_index = config[bits['result_param']]['indices']
+        column_dtypes = config[bits['param']]['index_dtypes']
+        df_index = config[bits['param']]['indices']
 
         df = pd.read_csv(filename
             ).astype(column_dtypes
             ).set_index(df_index)
 
         try:
-            interconnector = df.xs(parameter, drop_level=False)
-            interconnector['SCENARIO'] = bits['scenario']
-            interconnector['MODELRUN'] = bits['model_run']
-            interconnector = interconnector.reset_index(
+            results = df.xs(parameter, drop_level=False)
+            results['SCENARIO'] = bits['scenario']
+            results['MODELRUN'] = bits['model_run']
+            results = results.reset_index(
                 ).set_index(['SCENARIO', 'MODELRUN'] + df_index)
 
-            aggregated_results.append(interconnector)
+            aggregated_results.append(results)
         except KeyError:
             logger.warning("No results found for %s in %s", parameter, bits['filepath'])
 
@@ -79,10 +63,14 @@ def main(input_files: List, output_file: str, parameter: Tuple):
     #results.to_csv(output_file)
     results.to_parquet(output_file)
 
-# if __name__ == "__main__":
-#     main(sys.argv[2:], sys.argv[1])
-# else:
+
+strategy = Strategy()
+config = strategy.results_config.copy()
+config.update(strategy.input_config)
+logger.debug(config)
+config = add_dtypes(config)
+
 input_files : List = snakemake.input
 output_file = snakemake.output[0]
 parameter = tuple(snakemake.params['parameter'].split(","))
-main(input_files, output_file, parameter)
+main(input_files, output_file, parameter, config)

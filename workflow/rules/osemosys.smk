@@ -30,7 +30,7 @@ rule generate_datafile:
     log:
         "results/otoole_{scenario}_{model_run}.log"
     shell:
-        "otoole convert datapackage datafile {input} {output} 2> {log}"
+        "otoole -v convert datapackage datafile {input} {output} 2> {log}"
 
 rule generate_lp_file:
     message: "Generating the LP file for '{output}'"
@@ -38,10 +38,12 @@ rule generate_lp_file:
         data=expand("modelruns/{{scenario}}/model_{{model_run}}.txt"),
         model=config['model_file']
     resources:
-        mem_mb=5000,
+        mem_mb=7000,
         disk_mb=1300
     output:
         temporary("results/{scenario}/{model_run}.lp")
+    benchmark:
+        "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
         "results/glpsol_{scenario}_{model_run}.log"
     conda: "../envs/osemosys.yaml"
@@ -58,6 +60,8 @@ rule solve_lp:
         protected("results/{scenario}/{model_run}.sol")
     log:
         "results/cbc_{scenario}_{model_run}.log"
+    benchmark:
+        "benchmarks/cbc/{scenario}_{model_run}.tsv"
     resources:
         mem_mb=3000,
         disk_mb=33
@@ -89,13 +93,15 @@ rule process_solution:
 #         "results/solver_{scenario}_{model_run}.log"
 #     params:
 #         ilp="results/{scenario}/{model_run}.ilp"
+#     benchmark:
+#         "benchmarks/gurobi/{scenario}_{model_run}.tsv"
 #     resources:
 #         mem_mb=3000,
 #         disk_mb=33
 #     threads:
 #         1
 #     shell:
-#         "gurobi_cl OutputFlag=0 Method=2 Threads={threads} ResultFile={output.solution} LogFile={log} ResultFile={output.json} ResultFile={params.ilp} {input} 2> {log}"
+#         "gurobi_cl OutputFlag=0 Method=2 Threads={threads} ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input} > {log}"
 
 # rule process_solution:
 #     message: "Processing Gurobi solution for '{output}'"

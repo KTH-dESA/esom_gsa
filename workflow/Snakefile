@@ -14,10 +14,10 @@ AGG_RESULTS = pd.read_csv(config["agg_results"])
 include: "rules/osemosys.smk"
 
 rule all:
-    input: 
+    input:
         expand("results/{agg_result_file}.parquet", agg_result_file=AGG_RESULTS['filename']),
-        "results/hourly_demand.parquet", 
-        "results/hourly_generation.parquet"  
+        "results/hourly_demand.parquet",
+        "results/hourly_generation.parquet"
     message: "Running pipeline to generate the files '{input}'"
 
 rule create_sample:
@@ -30,16 +30,13 @@ rule create_sample:
     shell:
         "python workflow/scripts/create_sample.py {params.parameters} {output}"
 
-
 def get_input(wildcards):
     input_file = AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['resultfile']
     return ["results/{scenario}/{modelrun}/{input_file}.csv".format(
         modelrun=x, input_file=input_file, scenario=y) for x in MODELRUNS for y in SCENARIOS.index]
 
-
 def get_indices(wildcards):
     return AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['indices']
-
 
 rule extract_results:
     input: get_input
