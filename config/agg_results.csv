@@ -1,0 +1,5 @@
+resultfile,indices,filename
+TotalCapacityAnnual,"GLOBAL",annual_capacity
+AnnualEmissions,"GLOBAL",emissions
+Demand,"GLOBAL",annual_demand
+ProductionByTechnology,"GLOBAL",annual_generation
