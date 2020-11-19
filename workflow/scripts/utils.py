@@ -32,6 +32,8 @@ def read_results(input_filepath: str) -> pd.DataFrame:
         df = pd.read_parquet(input_filepath)
     elif extension == '.csv':
         df = pd.read_csv(input_filepath)
+    elif extension == '.feather':
+        df = pd.read_feather(input_filepath)
     return df
 
 
@@ -52,3 +54,7 @@ def write_results(df: pd.DataFrame, output_filepath: str, index=None) -> None:
         df.to_parquet(output_filepath, index=index)
     elif extension == '.csv':
         df.to_csv(output_filepath, index=index)
+    elif extension == '.feather':
+        if index:
+            df = df.reset_index()
+        df.to_feather(output_filepath)
