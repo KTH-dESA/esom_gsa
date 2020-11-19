@@ -7,4 +7,4 @@ dependencies:
   - numpy
   - pyarrow
   - pip:
-    - otoole>=v0.10
+    - otoole>=0.10
