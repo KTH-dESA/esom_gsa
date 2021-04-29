@@ -9,12 +9,12 @@ Arguments
 <sample_filepath>
     Path the sample file
 
-The expected format of the sample file is a CSV file with the following structure::
+The expected format of the input sample file is a CSV file with the following structure::
 
-    name,indexes,value,action,interpolation_index
-    CapitalCost,"GLOBAL,GCPSOUT0N",1024.3561663863075,interpolate,YEAR
+    name,indexes,value_base_year,value_end_year,action,interpolation_index
+    CapitalCost,"GLOBAL,GCPSOUT0N",1024.3561663863075,2949.23939,interpolate,YEAR
 
-It is very similar to the overall parameter.csv configuration file, except holds a sample value
+It is very similar to the overall ``parameter.csv`` configuration file, except holds a sample value
 rather than a range
 
 To run this script on the command line, use the following::
@@ -36,15 +36,18 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def process_data(df: pd.DataFrame, index: List, value: float,
-                 first_year: int, last_year: int) -> pd.DataFrame:
+def process_data(df: pd.DataFrame, index: List,
+                 start_year_value: float,end_year_value: float,
+                 first_year: int, last_year: int
+                 ) -> pd.DataFrame:
     """Interpolate data between min and max years
     """
     # df.index = df.index.sortlevel(level=0)[0]
     indexes = df.index.names
     df = df.loc[tuple(index + [first_year]):tuple(index + [last_year])]
     df = df.reset_index().set_index('YEAR')
-    df.loc[last_year, 'VALUE'] = value
+    df.loc[first_year, 'VALUE'] = start_year_value
+    df.loc[last_year, 'VALUE'] = end_year_value
     df.loc[first_year + 1:last_year - 1, 'VALUE'] = np.nan
     result = df.astype({'VALUE':'float'}).interpolate(method='values')
     return result.reset_index().set_index(indexes)
@@ -55,7 +58,8 @@ class TestInterpolate:
     def test_interpolate_parameter(self):
 
         index = "GLOBAL,GCPSOUT0N".split(",")
-        value = 6000.0
+        start_year_value = 1000.0
+        end_year_value = 6000.0
         data = [
             ['GLOBAL', 'GCPSOUT0N', 2015, 1000.0],
             ['GLOBAL', 'GCPSOUT0N', 2016, 1000.0],
@@ -69,7 +73,7 @@ class TestInterpolate:
         df = pd.DataFrame(data, columns=['REGION', 'TECHNOLOGY', 'YEAR', 'VALUE']
                           ).set_index(['REGION', 'TECHNOLOGY', 'YEAR']).astype({'VALUE': float})
 
-        actual = process_data(df, index, value, 2015, 2020)
+        actual = process_data(df, index, start_year_value, end_year_value, 2015, 2020)
 
         data = [
             ['GLOBAL', 'GCPSOUT0N', 2015, 1000.0],
@@ -118,20 +122,21 @@ def modify_parameters(
         df = model_params[name]
         untyped_index = parameter['indexes'].split(",")
         index = get_types_from_tuple(untyped_index, name, config)
-        value = parameter['value']
+        start_year_value = parameter['value_base_year']
+        end_year_value = parameter['value_end_year']
         action = parameter['action']
         inter_index = parameter['interpolation_index']
         if action == 'interpolate':
             df2 = df.sort_index()
             snippet = df2.xs(tuple(index), drop_level=False)
-            new_values = process_data(snippet, index, value, first_year, end_year)
+            new_values = process_data(snippet, index, start_year_value, end_year_value, first_year, end_year)
         elif action == 'fixed':
             if inter_index == 'None':
                 # Create new object and update inplace
-                data = [index + [value]]
+                data = [index + [start_year_value]]
             elif inter_index == 'YEAR':
                 # Create new object and update inplace
-                data = [index + [x] + [value] for x in range(first_year, end_year + 1, 1)]
+                data = [index + [x] + [start_year_value] for x in range(first_year, end_year + 1, 1)]
             columns = config[name]['indices']
             new_values = pd.DataFrame(data, columns=columns + ['VALUE']).astype(config[name]['index_dtypes']).set_index(columns)
         if all(new_values.index.isin(model_params[name].index)):
@@ -176,7 +181,8 @@ class TestModifyParameters:
             'YEAR': pd.DataFrame(data=[2015, 2016, 2017, 2018], columns=['VALUE'])}
         parameters = [{'name': 'VariableCost',
                        'indexes': "GLOBAL,AEIELEI0H,1",
-                       'value':  1,
+                       'value_base_year':  1,
+                       'value_end_year': 1,
                        'dist': 'unif',
                        'interpolation_index': 'YEAR',
                        'action': 'fixed'}]
@@ -214,7 +220,8 @@ class TestModifyParameters:
             'YEAR': pd.DataFrame(data=[2015, 2016, 2017, 2018], columns=['VALUE'])}
         parameters = [{'name': 'VariableCost',
                        'indexes': "GLOBAL,AEIELEI0H,1",
-                       'value':  1,
+                       'value_base_year':  100.0,
+                       'value_end_year': 1.0,
                        'dist': 'unif',
                        'interpolation_index': 'YEAR',
                        'action': 'interpolate'}]

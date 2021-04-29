@@ -32,6 +32,17 @@ rule generate_datafile:
     shell:
         "otoole -v convert datapackage datafile {input} {output} 2> {log}"
 
+rule modify_model_file:
+    message: "Adding MODEX sets to model file"
+    input:
+        "modelruns/{scenario}/model_{model_run}.txt"
+    output:
+        "modelruns/{scenario}/model_{model_run}_modex.txt"
+    threads:
+        1
+    shell:
+        "python workflow/scripts/CBC_results_AS_MODEX.py {input} {output}"
+
 rule generate_lp_file:
     message: "Generating the LP file for '{output}'"
     input:

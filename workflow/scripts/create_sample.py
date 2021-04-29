@@ -41,12 +41,9 @@ def main(parameters: List, sample_file: str, replicates: int):
     groups = []
     for parameter in parameters:
         names.append(parameter['name'] + ";" + parameter['indexes'])
-
-        min_value = float(parameter['min_value'])
-        max_value = float(parameter['max_value'])
-
         groups.append(parameter['group'])
-
+        min_value = 0
+        max_value = 1
         bounds.append([min_value, max_value])
 
     problem['names'] = names

@@ -13,11 +13,17 @@ To run the script on the command line, type::
 
     python create_sample.py 10 path/to/parameters.csv
 
-The ``parameters.csv`` CSV file should be formatted as follows::
+The ``parameters.csv`` CSV input file should be formatted as follows::
 
-    name,group,indexes,min_value,max_value,dist,interpolation_index,action
-    CapitalCost,pvcapex,"GLOBAL,GCPSOUT0N",500,1900,unif,YEAR,interpolate
-    DiscountRate,discountrate,"GLOBAL,GCIELEX0N",0.05,0.20,unif,None,fixed
+    name,group,indexes,min_value_base_year,max_value_base_year,min_value_end_year,max_value_end_year,dist,interpolation_index,action
+    DiscountRate,discountrate,"REGION",0.05,0.15,0.05,0.15,unif,None,fixed
+    CapitalCost,CapitalCostNG,"REGION,AONGCCC01N",2100,3100,742,1800,unif,YEAR,interpolate
+
+The output sample file is formatted as follows::
+
+   'name', 'indexes', 'value_base_year', 'value_end_year', 'action', 'interpolation_index'
+    DiscountRate,"REGION",0.05,0.05,fixed,None
+    CapitalCost,"REGION,AONGCCC01N",2100,742,interpolate,YEAR
 
 """
 import os
@@ -31,22 +37,31 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 def main(morris_sample, parameters, output_files):
-    for model_run, row in enumerate(morris_sample):
+    for model_run, sample_row in enumerate(morris_sample):
         filepath = output_files[model_run]
         with open(filepath, 'w') as csvfile:
 
-            fieldnames = ['name', 'indexes', 'value', 'action', 'interpolation_index']
+            fieldnames = ['name', 'indexes', 'value_base_year', 'value_end_year', 'action', 'interpolation_index']
             writer = csv.DictWriter(csvfile, fieldnames)
             writer.writeheader()
 
-            for column, param in zip(row, parameters):
+            for column, param in zip(sample_row, parameters):
+
+                min_by = param['min_value_base_year']
+                max_by = param['max_value_base_year']
+                min_ey = param['min_value_end_year']
+                max_ey = param['max_value_end_year']
+
+                value_base_year = (max_by - min_by) * column + min_by
+                value_end_year =  (max_ey - min_ey) * column + min_ey
+
                 data = {'name': param['name'],
                         'indexes': param['indexes'],
-                        'value': column,
+                        'value_base_year': value_base_year,
+                        'value_end_year': value_end_year,
                         'action': param['action'],
                         'interpolation_index': param['interpolation_index']}
                 writer.writerow(data)
-
 
 if __name__ == "__main__":
 
