@@ -20,8 +20,9 @@ The ``parameters.csv`` CSV file should be formatted as follows::
     DiscountRate,discountrate,"GLOBAL,GCIELEX0N",0.05,0.20,unif,None,fixed
 
 """
-from SALib.sample import latin
+from SALib.sample import morris
 import os
+import numpy as np
 import csv
 from typing import List
 import sys
@@ -30,9 +31,7 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def main(parameters: List, output_files: List):
-
-    replicates = len(output_files)
+def main(parameters: List, sample_file: str, replicates: int):
 
     problem = {}
     problem['num_vars'] = len(parameters)
@@ -54,29 +53,15 @@ def main(parameters: List, output_files: List):
     problem['bounds'] = bounds
     problem['groups'] = groups
 
-    sample = latin.sample(problem, replicates, seed=42)
-
-    for model_run, row in enumerate(sample):
-        filepath = output_files[model_run]
-        with open(filepath, 'w') as csvfile:
-
-            fieldnames = ['name', 'indexes', 'value', 'action', 'interpolation_index']
-            writer = csv.DictWriter(csvfile, fieldnames)
-            writer.writeheader()
-
-            for column, param in zip(row, parameters):
-                data = {'name': param['name'],
-                        'indexes': param['indexes'],
-                        'value': column,
-                        'action': param['action'],
-                        'interpolation_index': param['interpolation_index']}
-                writer.writerow(data)
+    sample = morris.sample(problem, replicates, seed=42)
+    np.savetxt(sample_file, sample, delimiter=',')
 
 
 if __name__ == "__main__":
 
-    output_files = sys.argv[2:]
     parameters_file = sys.argv[1]
+    sample_file = sys.argv[2]
+    replicates = int(sys.argv[3])
     with open(parameters_file, 'r') as csv_file:
         reader = list(csv.DictReader(csv_file))
-    main(reader, output_files)
+    main(reader, sample_file, replicates)

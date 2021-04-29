@@ -76,7 +76,7 @@ rule solve_lp:
         then
           gurobi_cl OutputFlag=0 Method=2 Threads={threads} ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input} > {log}
         else
-          cbc {input} solve -sec 1500 -solu {output.solution} > {log}
+          cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi
         """
 

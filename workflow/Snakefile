@@ -8,28 +8,48 @@ wildcard_constraints:
 
 RESULTS = pd.read_csv(config["result_params"]).set_index('name')
 SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
-MODELRUNS = range(config['replicates'])
+GROUPS = pd.read_csv(config['parameters'])['group'].unique()
+# Calculates number of model runs for the Method of Morris
+MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
 AGG_RESULTS = pd.read_csv(config["agg_results"])
+
 
 include: "rules/osemosys.smk"
 
 rule all:
     input:
-        expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index),
-        # expand("results/{agg_result_file}.{ext}", agg_result_file=AGG_RESULTS['filename'], ext=config['filetype']),
-        # expand("results/hourly_demand.{ext}", ext=config['filetype']),
-        # expand("results/hourly_generation.{ext}", ext=config['filetype'])
+        "results/status.csv"
+        # expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index),
     message: "Running pipeline to generate the files '{input}'"
 
 rule create_sample:
     params:
         replicates=config['replicates'],
         parameters=config['parameters']
-    output: expand("modelruns/{{scenario}}/{x}_sample.txt", x=range(config['replicates']))
+    output: "modelruns/{scenario}/morris_sample.txt"
     conda: "envs/sample.yaml"
     log: "results/create_{scenario}_sample.log"
     shell:
-        "python workflow/scripts/create_sample.py {params.parameters} {output}"
+        "python workflow/scripts/create_sample.py {params.parameters} {output} {params.replicates}"
+
+rule get_status:
+    params:
+        modelruns=len(MODELRUNS),
+        scenarios=len(SCENARIOS)
+    output: "results/status.csv"
+    log: "results/status.log"
+    shell:
+        "python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}"
+
+rule expand_sample:
+    params:
+        parameters=config['parameters']
+    input: "modelruns/{scenario}/morris_sample.txt"
+    output: expand("modelruns/{{scenario}}/{x}_sample.txt", x=MODELRUNS)
+    conda: "envs/sample.yaml"
+    log: "results/expand_{scenario}_sample.log"
+    shell:
+        "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
 
 rule clean:
     shell:
