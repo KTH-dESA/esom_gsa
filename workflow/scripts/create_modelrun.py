@@ -132,15 +132,18 @@ def modify_parameters(
                 # Create new object and update inplace
                 data = np.full((end_year + 1 - first_year, 1), start_year_value)
             new_values = data
-        try:
+
+        if inter_index == 'YEAR':
             logger.info("Updating values for {} in {}".format(index, name))
-            model_params[name].loc[tuple(index + [first_year]):tuple(index + [end_year])] = new_values
-        except pd.core.indexing.IndexingError as ex:
-            print(name)
-            raise pd.core.indexing.IndexingError(str(ex))
+            try:
+                model_params[name].loc[tuple(index + [first_year]):tuple(index + [end_year])] = new_values
+            except ValueError as ex:
+                msg = "Error raised in parameter {} by index {}"
+                print(msg.format(name, [tuple(index + [first_year]), tuple(index + [end_year])]))
+        else:
+            model_params[name].loc[index] = new_values
 
     return model_params
-
 
 class TestModifyParameters:
 
@@ -220,7 +223,7 @@ class TestModifyParameters:
                                    'index_dtypes': index_dtypes}}
         actual = modify_parameters(model_params, parameters, config)
         expected = pd.DataFrame(data=[
-            ["GLOBAL", 0.05],
+            ["GLOBAL", 0.1],
         ], columns=var_cost_cols).astype(
                 {'REGION': 'str', 'VALUE': 'float'}
             ).set_index(var_cost_index)
@@ -274,6 +277,10 @@ def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, 
 
     logger.info("Reading datapackage {}".format(input_filepath))
     model_params, default_values = reader.read(input_filepath)
+    for name, parameter in model_params.items():
+        parameter = parameter.sort_index()
+        model_params[name] = parameter
+
     config = reader.input_config
     model_params = modify_parameters(model_params, parameters, config)
     writer.write(model_params, output_filepath, default_values)
