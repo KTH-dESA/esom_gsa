@@ -57,14 +57,13 @@ def process_data(df: pd.DataFrame, index: List,
         Last year of the range to interpolate
     """
     # df.index = df.index.sortlevel(level=0)[0]
-    indexes = df.index.names
-    df = df.loc[tuple(index + [first_year]):tuple(index + [last_year])]
-    df = df.reset_index().set_index('YEAR')
-    df.loc[first_year, 'VALUE'] = start_year_value
-    df.loc[last_year, 'VALUE'] = end_year_value
-    df.loc[first_year + 1:last_year - 1, 'VALUE'] = np.nan
-    result = df.astype({'VALUE':'float'}).interpolate(method='values')
-    return result.reset_index().set_index(indexes)
+
+    values = np.interp([range(int(first_year), int(last_year) + 1)],
+                       np.array([int(first_year), int(last_year)]),
+                       np.array([float(start_year_value), float(end_year_value)])).T
+
+    df.loc[tuple(index + [first_year]):tuple(index + [last_year])] = values
+    return df.loc[tuple(index + [first_year]):tuple(index + [last_year])]
 
 
 class TestInterpolate:
