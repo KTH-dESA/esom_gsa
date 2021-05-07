@@ -1,6 +1,5 @@
 import pandas as pd
 configfile: "config/config.yaml"
-
 wildcard_constraints:
     agg_result_file="[a-zA-Z_\-]+",
     scenario="\d+",
@@ -11,6 +10,8 @@ SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
 GROUPS = pd.read_csv(config['parameters'])['group'].unique()
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
+print("There are {} groups".format(len(GROUPS)))
+print("Model runs: {}".format(MODELRUNS))
 AGG_RESULTS = pd.read_csv(config["agg_results"])
 
 
@@ -22,25 +23,26 @@ rule all:
         # expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index),
     message: "Running pipeline to generate the files '{input}'"
 
-rule create_sample:
-    params:
-        replicates=config['replicates'],
-        parameters=config['parameters']
-    output: "modelruns/{scenario}/morris_sample.txt"
-    conda: "envs/sample.yaml"
-    log: "results/create_{scenario}_sample.log"
-    shell:
-        "python workflow/scripts/create_sample.py {params.parameters} {output} {params.replicates}"
-
 rule get_status:
     params:
         modelruns=len(MODELRUNS),
         scenarios=len(SCENARIOS)
     input: expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index)
     output: "results/status.csv"
-    log: "results/status.log"
+    log: "results/log/status.log"
     shell:
         "python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}"
+
+rule create_sample:
+    message: "Creating sample for '{params.replicates}' trajectories and '{params.parameters}' parameters"
+    params:
+        replicates=config['replicates'],
+        parameters=config['parameters']
+    output: "modelruns/{scenario}/morris_sample.txt"
+    conda: "envs/sample.yaml"
+    log: "results/log/create_{scenario}_sample.log"
+    shell:
+        "python workflow/scripts/create_sample.py {params.parameters} {output} {params.replicates}"
 
 rule expand_sample:
     params:
@@ -48,7 +50,7 @@ rule expand_sample:
     input: "modelruns/{scenario}/morris_sample.txt"
     output: expand("modelruns/{{scenario}}/{x}_sample.txt", x=MODELRUNS)
     conda: "envs/sample.yaml"
-    log: "results/expand_{scenario}_sample.log"
+    log: "results/log/expand_{scenario}_sample.log"
     shell:
         "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
 

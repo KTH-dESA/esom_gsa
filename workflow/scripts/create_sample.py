@@ -50,7 +50,8 @@ def main(parameters: List, sample_file: str, replicates: int):
     problem['bounds'] = bounds
     problem['groups'] = groups
 
-    sample = morris.sample(problem, replicates, seed=42)
+    sample = morris.sample(problem, N=10, optimal_trajectories=replicates,
+                           local_optimization=True, seed=42)
     np.savetxt(sample_file, sample, delimiter=',')
 
 

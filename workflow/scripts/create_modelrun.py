@@ -41,6 +41,20 @@ def process_data(df: pd.DataFrame, index: List,
                  first_year: int, last_year: int
                  ) -> pd.DataFrame:
     """Interpolate data between min and max years
+
+    Arguments
+    ---------
+    df: pd.DataFrame
+    index: List[str]
+        List of index names e.g. ``['GLOBAL', 'GCPSOUT0N']``
+    start_year_value: float
+        Value of the parameter in the start year
+    end_year_value: float
+        Value of the parameter in the end year
+    first_year: int
+        First year of the range to interpolate
+    last_year: int
+        Last year of the range to interpolate
     """
     # df.index = df.index.sortlevel(level=0)[0]
     indexes = df.index.names
@@ -243,13 +257,12 @@ class TestModifyParameters:
 def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, int, float]]]):
 
     reader = ReadDatapackage()
+
     writer = WriteDatapackage()
 
     logger.info("Reading datapackage {}".format(input_filepath))
     model_params, default_values = reader.read(input_filepath)
     config = reader.input_config
-    config['DiscountRate']['indices'] = ['REGION','TECHNOLOGY']
-
     model_params = modify_parameters(model_params, parameters, config)
     writer.write(model_params, output_filepath, default_values)
 

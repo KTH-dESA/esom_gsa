@@ -12,13 +12,13 @@ rule copy_datapackage:
     input:
         datapackage=datapackage_from_scenario,
         sample="modelruns/{scenario}/{model_run}_sample.txt"
-    log: "results/copy_datapackage_{scenario}_{model_run}.log"
+    log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
     conda: "../envs/otoole.yaml"
     output:
         folder=directory("results/{scenario}/model_{model_run, \d+}"),
         dummy="results/{scenario}/model_{model_run, \d+}/datapackage.json",
     shell:
-        "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
+        "python -m cProfile -s time -o {log} workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
 
 rule generate_datafile:
     message: "Generating datafile for '{output}'"

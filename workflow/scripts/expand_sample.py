@@ -47,10 +47,14 @@ def main(morris_sample, parameters, output_files):
 
             for column, param in zip(sample_row, parameters):
 
-                min_by = param['min_value_base_year']
-                max_by = param['max_value_base_year']
-                min_ey = param['min_value_end_year']
-                max_ey = param['max_value_end_year']
+                try:
+                    min_by = float(param['min_value_base_year'])
+                    max_by = float(param['max_value_base_year'])
+                    min_ey = float(param['min_value_end_year'])
+                    max_ey = float(param['max_value_end_year'])
+                except ValueError as ex:
+                    print(param)
+                    raise ValueError(str(ex))
 
                 value_base_year = (max_by - min_by) * column + min_by
                 value_end_year =  (max_ey - min_ey) * column + min_ey
