@@ -18,41 +18,42 @@ rule copy_datapackage:
         folder=directory("results/{scenario}/model_{model_run, \d+}"),
         dummy="results/{scenario}/model_{model_run, \d+}/datapackage.json",
     shell:
-        "python -m cProfile -s time -o {log} workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
+        "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
 
 rule generate_datafile:
     message: "Generating datafile for '{output}'"
     input:
         datapackage="results/{scenario}/model_{model_run}/datapackage.json"
     output:
-        "modelruns/{scenario}/model_{model_run}.txt"
+        "results/{scenario}/model_{model_run}.txt"
     conda: "../envs/otoole.yaml"
     log:
-        "results/otoole_{scenario}_{model_run}.log"
+        "results/log/otoole_{scenario}_{model_run}.log"
     shell:
         "otoole -v convert datapackage datafile {input} {output} 2> {log}"
 
 rule modify_model_file:
     message: "Adding MODEX sets to model file"
     input:
-        "modelruns/{scenario}/model_{model_run}.txt"
+        "results/{scenario}/model_{model_run}.txt"
     output:
-        "modelruns/{scenario}/model_{model_run}_modex.txt"
+        "results/{scenario}/model_{model_run}_modex.txt"
     threads:
         1
     shell:
-        "python workflow/scripts/CBC_results_AS_MODEX.py {input} {output}"
+        # "python workflow/scripts/CBC_results_AS_MODEX.py {input} {output}"
+        "python workflow/scripts/add_modex_sets.py otoole {input} {output}"
 
 rule generate_lp_file:
     message: "Generating the LP file for '{output}'"
     input:
-        data=expand("modelruns/{{scenario}}/model_{{model_run}}.txt"),
+        data="results/{scenario}/model_{model_run}_modex.txt",
         model=config['model_file']
     resources:
         mem_mb=7000,
         disk_mb=1300
     output:
-        temporary("results/{scenario}/{model_run}.lp")
+        temporary("results/{scenario}/{model_run}.lp.gz")
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -66,7 +67,7 @@ rule generate_lp_file:
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        "results/{scenario}/{model_run}.lp"
+        "results/{scenario}/{model_run}.lp.gz"
     output:
         json="results/{scenario}/{model_run}.json",
         solution="results/{scenario}/{model_run}.sol",
