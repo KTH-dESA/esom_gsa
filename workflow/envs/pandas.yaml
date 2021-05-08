@@ -1,3 +1,4 @@
+name: pandas
 channels:
   - conda-forge
   - defaults
