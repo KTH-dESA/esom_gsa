@@ -51,8 +51,9 @@ rule generate_lp_file:
         data="results/{scenario}/model_{model_run}_modex.txt",
         model=config['model_file']
     resources:
-        mem_mb=7000,
-        disk_mb=1300
+        mem_mb=96000,
+        disk_mb=16000,
+        runtime=06:00:00
     output:
         temporary("results/{scenario}/{model_run}.lp.gz")
     benchmark:
@@ -79,8 +80,9 @@ rule solve_lp:
     benchmark:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
-        mem_mb=3000,
-        disk_mb=33
+        mem_mb=64000,
+        disk_mb=33,
+        time=06:00:00
     threads:
         1
     shell:
