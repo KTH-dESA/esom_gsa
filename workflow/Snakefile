@@ -5,6 +5,8 @@ wildcard_constraints:
     scenario="\d+",
     model_run="\d+"
 
+container: "docker://condaforge/mambaforge:4.10.1-0"
+
 RESULTS = pd.read_csv(config["result_params"]).set_index('name')
 SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
 GROUPS = pd.read_csv(config['parameters'])['group'].unique()
