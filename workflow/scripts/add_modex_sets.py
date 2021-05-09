@@ -294,8 +294,8 @@ def main(data_format, data_infile, data_outfile):
             file_output_function(dict_stt, dict_stt, storage_list, 'set MODExTECHNOLOGYperSTORAGEto[', '')
             file_output_function(dict_stf, dict_stf, storage_list, 'set MODExTECHNOLOGYperSTORAGEfrom[', '')
 
-        if len(emission_list) > 0:
-            file_output_function(dict_emi, dict_emi, emission_list, 'set MODExTECHNOLOGYperEMISSION[', '')
+        # if len(emission_list) > 0:
+        #     file_output_function(dict_emi, dict_emi, emission_list, 'set MODExTECHNOLOGYperEMISSION[', '')
 
         file_out.write('end;')
 
