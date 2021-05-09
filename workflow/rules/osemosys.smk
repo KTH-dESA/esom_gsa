@@ -53,7 +53,7 @@ rule generate_lp_file:
     resources:
         mem_mb=96000,
         disk_mb=16000,
-        runtime_min=360
+        time=360
     output:
         temporary("results/{scenario}/{model_run}.lp.gz")
     benchmark:
@@ -82,7 +82,7 @@ rule solve_lp:
     resources:
         mem_mb=64000,
         disk_mb=33,
-        runtime_min=360
+        time=360
     threads:
         1
     shell:
