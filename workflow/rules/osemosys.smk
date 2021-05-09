@@ -40,6 +40,7 @@ rule modify_model_file:
         "results/{scenario}/model_{model_run}_modex.txt"
     threads:
         1
+    conda: "../envs/otoole.yaml"
     shell:
         # "python workflow/scripts/CBC_results_AS_MODEX.py {input} {output}"
         "python workflow/scripts/add_modex_sets.py otoole {input} {output}"
