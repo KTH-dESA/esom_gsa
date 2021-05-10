@@ -52,7 +52,8 @@ rule generate_lp_file:
         model=config['model_file']
     resources:
         mem_mb=96000,
-        disk_mb=16000
+        disk_mb=16000,
+        time="03:00:00"
     output:
         temporary("results/{scenario}/{model_run}.lp.gz")
     benchmark:
@@ -63,7 +64,7 @@ rule generate_lp_file:
     threads:
         1
     shell:
-        "glpsol -m {input.model} -d {input.data} --wlp {output} --check > {log}"
+        "glpsol -m {input.model} -d {input.data} --wlp {output} --log {log} --check 2> {log}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
@@ -80,7 +81,8 @@ rule solve_lp:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
         mem_mb=64000,
-        disk_mb=33
+        disk_mb=33,
+        time="06:00:00"
     threads:
         1
     shell:
