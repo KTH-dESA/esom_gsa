@@ -198,7 +198,7 @@ def main(data_format, data_infile, data_outfile):
                             year = details[4].strip()
                             value = details[5].strip()
 
-                            if float(value) != 0:
+                            if float(value) != 0.0:
                                 data_out.append(tuple([fuel, tech, mode]))
                                 output_table.append(tuple([tech, fuel, mode, year, value]))
                                 data_all.append(tuple([tech, mode]))
@@ -208,7 +208,7 @@ def main(data_format, data_infile, data_outfile):
                             fuel = details[2].strip()
                             mode = details[3].strip()
                             value = details[5].strip()
-                            if float(value) != 0:
+                            if float(value) != 0.0:
                                 data_inp.append(tuple([fuel, tech, mode]))
                                 data_all.append(tuple([tech, mode]))
 
@@ -217,7 +217,7 @@ def main(data_format, data_infile, data_outfile):
                             storage = details[2].strip()
                             mode = details[3].strip()
                             value = details[4].strip()
-                            if value > 0:
+                            if value > 0.0:
                                 storage_to.append(tuple([storage, tech, mode]))
                                 data_all.append(tuple([storage, mode]))
 
@@ -226,7 +226,7 @@ def main(data_format, data_infile, data_outfile):
                             storage = details[2].strip()
                             mode = details[3].strip()
                             value = details[4].strip()
-                            if value > 0:
+                            if value > 0.0:
                                 storage_from.append(tuple([storage, tech, mode]))
                                 data_all.append(tuple([storage, mode]))
 
@@ -234,9 +234,10 @@ def main(data_format, data_infile, data_outfile):
                             tech = details[1].strip()
                             emission = details[2].strip()
                             mode = details[3].strip()
-                            value = details[4].strip()
-                            if float(value) != 0:
+                            value = details[5].strip()
+                            if float(value) != 0.0:
                                 emission_table.append(tuple([emission, tech, mode]))
+                                data_all.append(tuple([tech, mode]))
 
                 if any(param in line for param in params_to_check):
                     param_current = details[-2]
@@ -300,8 +301,8 @@ def main(data_format, data_infile, data_outfile):
             file_output_function(dict_stt, dict_stt, storage_list, 'set MODExTECHNOLOGYperSTORAGEto[', '')
             file_output_function(dict_stf, dict_stf, storage_list, 'set MODExTECHNOLOGYperSTORAGEfrom[', '')
 
-        # if len(emission_list) > 0:
-        #     file_output_function(dict_emi, dict_emi, emission_list, 'set MODExTECHNOLOGYperEMISSION[', '')
+        if len(emission_list) > 0:
+            file_output_function(dict_emi, dict_emi, emission_list, 'set MODExTECHNOLOGYperEMISSION[', '')
 
         file_out.write('end;')
 
