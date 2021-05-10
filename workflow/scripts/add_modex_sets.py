@@ -70,7 +70,7 @@ def main(data_format, data_infile, data_outfile):
     storage_from = []
     emission_table = []
 
-    param_check = ['OutputActivityRatio', 'InputActivityRatio', 'TechnologyToStorage', 'TechnologyFromStorage', 'EmissionActivityRatio']
+    params_to_check = ['OutputActivityRatio', 'InputActivityRatio', 'TechnologyToStorage', 'TechnologyFromStorage', 'EmissionActivityRatio']
 
     with open(data_infile, 'r') as f:
         for line in f:
@@ -186,54 +186,60 @@ def main(data_format, data_infile, data_outfile):
     if data_format == 'otoole':
         with open(data_infile, 'r') as f:
             for line in f:
+                details = line.split(' ')
                 if line.startswith(";"):
                     parsing = False
                 if parsing:
-                    if len(line.split(' ')) > 1:
+                    if len(details) > 1:
                         if param_current == 'OutputActivityRatio':
-                            tech = line.split(' ')[1].strip()
-                            fuel = line.split(' ')[2].strip()
-                            mode = line.split(' ')[3].strip()
-                            year = line.split(' ')[4].strip()
-                            value = line.split(' ')[5].strip()
+                            tech = details[1].strip()
+                            fuel = details[2].strip()
+                            mode = details[3].strip()
+                            year = details[4].strip()
+                            value = details[5].strip()
 
-                            data_out.append(tuple([fuel, tech, mode]))
-                            output_table.append(tuple([tech, fuel, mode, year, value]))
-                            data_all.append(tuple([tech, mode]))
+                            if float(value) != 0:
+                                data_out.append(tuple([fuel, tech, mode]))
+                                output_table.append(tuple([tech, fuel, mode, year, value]))
+                                data_all.append(tuple([tech, mode]))
 
                         if param_current == 'InputActivityRatio':
-                            tech = line.split(' ')[1].strip()
-                            fuel = line.split(' ')[2].strip()
-                            mode = line.split(' ')[3].strip()
-
-                            data_inp.append(tuple([fuel, tech, mode]))
-                            data_all.append(tuple([tech, mode]))
+                            tech = details[1].strip()
+                            fuel = details[2].strip()
+                            mode = details[3].strip()
+                            value = details[5].strip()
+                            if float(value) != 0:
+                                data_inp.append(tuple([fuel, tech, mode]))
+                                data_all.append(tuple([tech, mode]))
 
                         if param_current == 'TechnologyToStorage':
-                            tech = line.split(' ')[1].strip()
-                            storage = line.split(' ')[2].strip()
-                            mode = line.split(' ')[3].strip()
-
-                            storage_to.append(tuple([storage, tech, mode]))
-                            data_all.append(tuple([storage, mode]))
+                            tech = details[1].strip()
+                            storage = details[2].strip()
+                            mode = details[3].strip()
+                            value = details[4].strip()
+                            if value > 0:
+                                storage_to.append(tuple([storage, tech, mode]))
+                                data_all.append(tuple([storage, mode]))
 
                         if param_current == 'TechnologyFromStorage':
-                            tech = line.split(' ')[1].strip()
-                            storage = line.split(' ')[2].strip()
-                            mode = line.split(' ')[3].strip()
-
-                            storage_from.append(tuple([storage, tech, mode]))
-                            data_all.append(tuple([storage, mode]))
+                            tech = details[1].strip()
+                            storage = details[2].strip()
+                            mode = details[3].strip()
+                            value = details[4].strip()
+                            if value > 0:
+                                storage_from.append(tuple([storage, tech, mode]))
+                                data_all.append(tuple([storage, mode]))
 
                         if param_current == 'EmissionActivityRatio':
-                            tech = line.split(' ')[1].strip()
-                            emission = line.split(' ')[2].strip()
-                            mode = line.split(' ')[3].strip()
+                            tech = details[1].strip()
+                            emission = details[2].strip()
+                            mode = details[3].strip()
+                            value = details[4].strip()
+                            if float(value) != 0:
+                                emission_table.append(tuple([emission, tech, mode]))
 
-                            emission_table.append(tuple([emission, tech, mode]))
-
-                if any(param in line for param in param_check):
-                    param_current = line.split(' ')[-2]
+                if any(param in line for param in params_to_check):
+                    param_current = details[-2]
                     parsing = True
 
     data_out = list(set(data_out))
