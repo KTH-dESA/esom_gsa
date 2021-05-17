@@ -42,7 +42,6 @@ rule modify_model_file:
         1
     conda: "../envs/otoole.yaml"
     shell:
-        # "python workflow/scripts/CBC_results_AS_MODEX.py {input} {output}"
         "python workflow/scripts/add_modex_sets.py otoole {input} {output}"
 
 rule generate_lp_file:
@@ -55,7 +54,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time="03:00:00"
     output:
-        temporary("results/{scenario}/{model_run}.lp.gz")
+        "results/{scenario}/{model_run}.lp.gz"
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -81,15 +80,15 @@ rule solve_lp:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
         mem_mb=64000,
-        disk_mb=33,
-        time="06:00:00"
+        disk_mb=20000,
+        time="12:00:00"
     threads:
         1
     shell:
         """
         if [ {config[solver]} = gurobi ]
         then
-          gurobi_cl OutputFlag=0 Method=2 Threads={threads} ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input} > {log}
+          gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi

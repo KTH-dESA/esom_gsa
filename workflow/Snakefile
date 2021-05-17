@@ -1,5 +1,6 @@
 import pandas as pd
 configfile: "config/config.yaml"
+localrules: all, clean
 wildcard_constraints:
     agg_result_file="[a-zA-Z_\-]+",
     scenario="\d+",
@@ -29,7 +30,9 @@ rule get_status:
     params:
         modelruns=len(MODELRUNS),
         scenarios=len(SCENARIOS)
-    input: expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    input: expand("results/{scenario}/{model_run}.lp.gz", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    # input: expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    # input: ["results/1/3.json"]
     output: "results/status.csv"
     log: "results/log/status.log"
     shell:
