@@ -63,7 +63,7 @@ rule generate_lp_file:
     threads:
         1
     shell:
-        "glpsol -m {input.model} -d {input.data} --wlp {output} --log {log} --check 2> {log}"
+        "glpsol -m {input.model} -d {input.data} --wlp {output} --check 2> {log}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
@@ -83,12 +83,12 @@ rule solve_lp:
         disk_mb=20000,
         time="12:00:00"
     threads:
-        1
+        2
     shell:
         """
         if [ {config[solver]} = gurobi ]
         then
-          gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
+          gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi
