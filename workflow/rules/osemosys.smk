@@ -79,16 +79,18 @@ rule solve_lp:
     benchmark:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
-        mem_mb=64000,
+        mem_mb=30000,
         disk_mb=20000,
         time="12:00:00"
     threads:
-        2
+        4
     shell:
         """
         if [ {config[solver]} = gurobi ]
         then
-          gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
+          gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
+        elif [ {config[solver]} = cplex ]
+          cplex -c "read {input}" "optimize" "write {output.solution}" "quit"
         else
           cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi
