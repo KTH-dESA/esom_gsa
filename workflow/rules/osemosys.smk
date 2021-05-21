@@ -99,7 +99,7 @@ rule solve_lp:
           echo "write"                  >> {params.cplex}
           echo "output.solution"        >> {params.cplex}
           echo "quit"                   >> {params.cplex}
-          gunzip {input} && cplex < {params.cplex}
+          gunzip {input} && cplex < {params.cplex} > {log} && touch {output.json}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi
