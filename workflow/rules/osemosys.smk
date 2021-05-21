@@ -58,12 +58,12 @@ rule generate_lp_file:
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
-        "results/glpsol_{scenario}_{model_run}.log"
+        "results/log/glpsol_{scenario}_{model_run}.log"
     conda: "../envs/osemosys.yaml"
     threads:
         1
     shell:
-        "glpsol -m {input.model} -d {input.data} --wlp {output} --check 2> {log}"
+        "glpsol -m {input.model} -d {input.data} --wlp {output} --check > {log}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
@@ -73,7 +73,7 @@ rule solve_lp:
         json="results/{scenario}/{model_run}.json",
         solution="results/{scenario}/{model_run}.sol",
     log:
-        "results/solver_{scenario}_{model_run}.log"
+        "results/log/solver_{scenario}_{model_run}.log"
     params:
         ilp="results/{scenario}/{model_run}.ilp",
         cplex="results/{scenario}/{model_run}.cplex",
@@ -85,7 +85,7 @@ rule solve_lp:
         disk_mb=20000,
         time="12:00:00"
     threads:
-        4
+        2
     shell:
         """
         if [ {config[solver]} = gurobi ]
@@ -93,15 +93,14 @@ rule solve_lp:
           gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
         elif [ {config[solver]} = cplex ]
         then
-          echo "set threads {threads}"  > {params.cplex}
-          echo "read {params.lp}" 	    >> {params.cplex}
-          echo "baropt"                 >> {params.cplex}
-          echo "write"                  >> {params.cplex}
-          echo "output.solution"        >> {params.cplex}
-          echo "quit"                   >> {params.cplex}
-          gunzip {input} && cplex < {params.cplex} > {log} && touch {output.json}
+          echo "set threads {threads}"   > {params.cplex}
+          echo "read {params.lp}" 	     >> {params.cplex}
+          echo "baropt"                  >> {params.cplex}
+          echo "write {output.solution}" >> {params.cplex}
+          echo "quit"                    >> {params.cplex}
+          gunzip -fq {input} && cplex < {params.cplex} > {log} && touch {output.json}
         else
-          cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
+          cbc {input} solve -sec 1500 -solu {output.solution} 2> {log} && touch {output.json}
         fi
         """
 
