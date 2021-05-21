@@ -91,9 +91,7 @@ rule solve_lp:
         if [ {config[solver]} = gurobi ]
         then
           gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
-        elif [ {config[solver]} = cplex ]
-
-        # read {params.lp} optimize write {output.solution} quit
+        elif [ {config[solver]} = cplex ] then
           echo "read {params.lp}" 	    > {params.cplex}
           echo "baropt"                 >> {params.cplex}
           echo "write"                  >> {params.cplex}
