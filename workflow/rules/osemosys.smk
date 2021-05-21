@@ -93,8 +93,8 @@ rule solve_lp:
           gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
         elif [ {config[solver]} = cplex ]
         then
-          echo "set threads {threads}" >> {params.cplex}
-          echo "read {params.lp}" 	    > {params.cplex}
+          echo "set threads {threads}"  > {params.cplex}
+          echo "read {params.lp}" 	    >> {params.cplex}
           echo "baropt"                 >> {params.cplex}
           echo "write"                  >> {params.cplex}
           echo "output.solution"        >> {params.cplex}
