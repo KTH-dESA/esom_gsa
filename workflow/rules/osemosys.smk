@@ -99,7 +99,7 @@ rule solve_lp:
           echo "set threads {threads}" >> {params.cplex}
           echo "output.solution"        >> {params.cplex}
           echo "quit"                   >> {params.cplex}
-          unzip {input} && cplex -f {params.cplex}
+          gunzip {input} && cplex -f {params.cplex}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi
