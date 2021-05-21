@@ -76,7 +76,7 @@ rule solve_lp:
         "results/solver_{scenario}_{model_run}.log"
     params:
         ilp="results/{scenario}/{model_run}.ilp",
-        cplex="results/{scenario}/{model_run}.ilp",
+        cplex="results/{scenario}/{model_run}.cplex",
         lp="results/{scenario}/{model_run}.lp"
     benchmark:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
@@ -93,13 +93,13 @@ rule solve_lp:
           gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
         elif [ {config[solver]} = cplex ]
         then
+          echo "set threads {threads}" >> {params.cplex}
           echo "read {params.lp}" 	    > {params.cplex}
           echo "baropt"                 >> {params.cplex}
           echo "write"                  >> {params.cplex}
-          echo "set threads {threads}" >> {params.cplex}
           echo "output.solution"        >> {params.cplex}
           echo "quit"                   >> {params.cplex}
-          gunzip {input} && cplex -f {params.cplex}
+          gunzip {input} && cplex < {params.cplex}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi
