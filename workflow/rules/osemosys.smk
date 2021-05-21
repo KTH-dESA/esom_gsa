@@ -25,7 +25,7 @@ rule generate_datafile:
     input:
         datapackage="results/{scenario}/model_{model_run}/datapackage.json"
     output:
-        "results/{scenario}/model_{model_run}.txt"
+        temp("results/{scenario}/model_{model_run}.txt")
     conda: "../envs/otoole.yaml"
     log:
         "results/log/otoole_{scenario}_{model_run}.log"
@@ -37,7 +37,7 @@ rule modify_model_file:
     input:
         "results/{scenario}/model_{model_run}.txt"
     output:
-        "results/{scenario}/model_{model_run}_modex.txt"
+        temp("results/{scenario}/model_{model_run}_modex.txt")
     threads:
         1
     conda: "../envs/otoole.yaml"
