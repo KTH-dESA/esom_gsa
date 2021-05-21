@@ -75,7 +75,9 @@ rule solve_lp:
     log:
         "results/solver_{scenario}_{model_run}.log"
     params:
-        ilp="results/{scenario}/{model_run}.ilp"
+        ilp="results/{scenario}/{model_run}.ilp",
+        cplex="results/{scenario}/{model_run}.ilp",
+        lp="results/{scenario}/{model_run}.lp"
     benchmark:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
@@ -90,7 +92,15 @@ rule solve_lp:
         then
           gurobi_cl Method=2 Threads={threads} LogFile={log} LogToConsole=0 ScaleFlag=2 NumericFocus=3 ResultFile={output.solution} ResultFile={output.json} ResultFile={params.ilp} {input}
         elif [ {config[solver]} = cplex ]
-          unzip {input} && cplex -c read results/{wildcards.scenario}/{wildcards.model_run}.lp optimize write {output.solution} quit
+
+        # read {params.lp} optimize write {output.solution} quit
+          echo "read {params.lp}" 	    > {params.cplex}
+          echo "baropt"                 >> {params.cplex}
+          echo "write"                  >> {params.cplex}
+          eacho "set threads {threads}" >> {params.cplex}
+          echo "output.solution"        >> {params.cplex}
+          echo "quit"                   >> {params.cplex}
+          unzip {input} && cplex -f {params.cplex}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} > {log} && touch {output.json}
         fi
