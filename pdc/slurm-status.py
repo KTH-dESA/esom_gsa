@@ -26,8 +26,8 @@ for i in range(STATUS_ATTEMPTS):
         res = {jobid: m.group(1)}
         break
     except sp.CalledProcessError as e:
-        logger.error("scontrol process error")
-        logger.error(e)
+        # logger.error("scontrol process error")
+        # logger.error(e)
         if i >= STATUS_ATTEMPTS - 1:
             print("failed")
             exit(0)
