@@ -50,9 +50,9 @@ rule generate_lp_file:
         data="results/{scenario}/model_{model_run}_modex.txt",
         model=config['model_file']
     resources:
-        mem_mb=96000,
+        mem_mb=64000,
         disk_mb=16000,
-        time="03:00:00"
+        time=180
     output:
         "results/{scenario}/{model_run}.lp.gz"
     benchmark:
