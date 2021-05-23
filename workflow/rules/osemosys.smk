@@ -60,6 +60,7 @@ rule generate_lp_file:
     log:
         "results/log/glpsol_{scenario}_{model_run}.log"
     conda: "../envs/osemosys.yaml"
+    group: "gen_lp"
     threads:
         1
     shell:
@@ -83,9 +84,10 @@ rule solve_lp:
     resources:
         mem_mb=30000,
         disk_mb=20000,
-        time="12:00:00"
+        time=1080
+    group: "solve"
     threads:
-        2
+        6
     shell:
         """
         if [ {config[solver]} = gurobi ]
