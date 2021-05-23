@@ -66,10 +66,21 @@ rule generate_lp_file:
     shell:
         "glpsol -m {input.model} -d {input.data} --wlp {output} --check > {log}"
 
+rule unzip:
+    message: "Unzipping LP file"
+    input:
+        "results/{scenario}/{model_run}.lp.gz"
+    group:
+        "solve"
+    output:
+        "results/{scenario}/{model_run}.lp"
+    shell:
+        "gunzip -fq {input}"
+
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        "results/{scenario}/{model_run}.lp.gz"
+        "results/{scenario}/{model_run}.lp"
     output:
         json="results/{scenario}/{model_run}.json",
         solution="results/{scenario}/{model_run}.sol",
@@ -100,7 +111,7 @@ rule solve_lp:
           echo "baropt"                  >> {params.cplex}
           echo "write {output.solution}" >> {params.cplex}
           echo "quit"                    >> {params.cplex}
-          gunzip -fq {input} && cplex < {params.cplex} > {log} && touch {output.json}
+        cplex < {params.cplex} > {log} && touch {output.json}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} 2> {log} && touch {output.json}
         fi
