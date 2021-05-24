@@ -14,6 +14,7 @@ rule copy_datapackage:
         sample="modelruns/{scenario}/{model_run}_sample.txt"
     log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
     conda: "../envs/otoole.yaml"
+    group: "gen_lp"
     output:
         folder=directory("results/{scenario}/model_{model_run, \d+}"),
         dummy="results/{scenario}/model_{model_run, \d+}/datapackage.json",
@@ -27,6 +28,7 @@ rule generate_datafile:
     output:
         temp("results/{scenario}/model_{model_run}.txt")
     conda: "../envs/otoole.yaml"
+    group: "gen_lp"
     log:
         "results/log/otoole_{scenario}_{model_run}.log"
     shell:
@@ -38,6 +40,7 @@ rule modify_model_file:
         "results/{scenario}/model_{model_run}.txt"
     output:
         temp("results/{scenario}/model_{model_run}_modex.txt")
+    group: "gen_lp"
     threads:
         1
     conda: "../envs/otoole.yaml"
