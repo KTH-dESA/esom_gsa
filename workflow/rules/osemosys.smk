@@ -11,7 +11,7 @@ rule copy_datapackage:
     message: "Copying and modifying datapackage for '{output.folder}'"
     input:
         datapackage=datapackage_from_scenario,
-        sample="modelruns/{scenario}/{model_run}_sample.txt"
+        sample="modelruns/{scenario}/{model_run}_sample_export.txt"
     log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
     conda: "../envs/otoole.yaml"
     group: "gen_lp"

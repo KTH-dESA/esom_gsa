@@ -51,11 +51,24 @@ rule expand_sample:
     params:
         parameters=config['parameters']
     input: "modelruns/{scenario}/morris_sample.txt"
-    output: expand("modelruns/{{scenario}}/{x}_sample.txt", x=MODELRUNS)
+    output: expand("modelruns/{{scenario}}/{x}_sample_import.txt", x=MODELRUNS)
     conda: "envs/sample.yaml"
     log: "results/log/expand_{scenario}_sample.log"
     shell:
         "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
+
+rule add_export:
+    params:
+        parameters=config['parameters']
+    input: expand("modelruns/{{scenario}}/{x}_sample_import.txt", x=MODELRUNS)
+    output: expand("modelruns/{{scenario}}/{x}_sample_export.txt", x=MODELRUNS)
+    log: "results/log/add_export_{scenario}_sample.log"
+    shell:
+        """
+        grep -v -e 'ILGX' {input} > {output}
+        grep -e 'ILGX' {input} | sed 's/ILGX/ELGX' >> {output}
+        """
+
 
 rule clean:
     shell:

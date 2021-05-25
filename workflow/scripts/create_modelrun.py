@@ -269,6 +269,46 @@ class TestModifyParameters:
         pd.testing.assert_frame_equal(actual[name], expected)
 
 
+    def test_interpolate_negative(self):
+        name = 'VariableCost'
+        var_cost_cols = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR','VALUE']
+        var_cost_index = ['REGION','TECHNOLOGY','MODE_OF_OPERATION','YEAR']
+        index_dtypes = {'REGION': 'str','TECHNOLOGY': 'str','MODE_OF_OPERATION': 'int','YEAR': 'int','VALUE': 'float'}
+        data = [
+            ["GLOBAL","AEIELEI0H",1,2015,100.0],
+            ["GLOBAL","AEIELEI0H",1,2016,100.0],
+            ["GLOBAL","AEIELEI0H",1,2017,100.0],
+            ["GLOBAL","AEIELEI0H",1,2018,100.0],
+        ]
+
+        model_params = {
+            'VariableCost': pd.DataFrame(data=data,
+                                         columns=var_cost_cols
+                ).astype(index_dtypes
+                ).set_index(var_cost_index),
+            'YEAR': pd.DataFrame(data=[2015, 2016, 2017, 2018], columns=['VALUE'])}
+        parameters = [{'name': 'VariableCost',
+                       'indexes': "GLOBAL,AEIELEI0H,1",
+                       'value_base_year':  -100.0,
+                       'value_end_year': -1.0,
+                       'dist': 'unif',
+                       'interpolation_index': 'YEAR',
+                       'action': 'interpolate'}]
+
+        config = {'VariableCost': {'indices': var_cost_index,
+                                   'index_dtypes': index_dtypes}}
+        actual = modify_parameters(model_params, parameters, config)
+        expected = pd.DataFrame(data=[
+            ["GLOBAL","AEIELEI0H",1,2015,-100.0],
+            ["GLOBAL","AEIELEI0H",1,2016,-67.0],
+            ["GLOBAL","AEIELEI0H",1,2017,-34.0],
+            ["GLOBAL","AEIELEI0H",1,2018,-1.0],
+        ], columns=var_cost_cols).astype(
+                index_dtypes
+            ).set_index(var_cost_index)
+        pd.testing.assert_frame_equal(actual[name], expected)
+
+
 def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, int, float]]]):
 
     reader = ReadDatapackage()
