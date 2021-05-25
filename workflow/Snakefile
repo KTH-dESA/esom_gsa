@@ -57,18 +57,7 @@ rule expand_sample:
     shell:
         "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
 
-rule add_export:
-    message: "Adds matching export parameters"
-    params:
-        parameters=config['parameters']
-    input: "modelruns/{scenario}/{model_run}_sample_import.txt"
-    output: "modelruns/{scenario}/{model_run}_sample_export.txt"
-    log: "results/log/add_export_{scenario}_{model_run}_sample_export.log"
-    shell:
-        """
-        grep -v -e 'ELGX' {input} > {output} 2> {log}
-        grep -e 'ILGX' {input} | sed -e 's/ILGX/ELGX/' -e 's/-//g' >> {output} 2> {log}
-        """
+
 
 
 rule clean:

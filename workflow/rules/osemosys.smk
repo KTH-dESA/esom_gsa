@@ -4,6 +4,20 @@ wildcard_constraints:
     modelrun="\d+",
     scenarios="\d+"
 
+rule add_export:
+    message: "Adds matching export parameters"
+    params:
+        parameters=config['parameters']
+    group: "gen_lp"
+    input: "modelruns/{scenario}/{model_run}_sample_import.txt"
+    output: "modelruns/{scenario}/{model_run}_sample_export.txt"
+    log: "results/log/add_export_{scenario}_{model_run}_sample_export.log"
+    shell:
+        """
+        grep -v -e 'ELGX' {input} > {output} 2> {log}
+        grep -e 'ILGX' {input} | sed -e 's/ILGX/ELGX/' -e 's/-//g' >> {output} 2> {log}
+        """
+
 def datapackage_from_scenario(wildcards):
     return SCENARIOS.loc[int(wildcards.scenario), 'path']
 
@@ -57,7 +71,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time=180
     output:
-        temp("{config['scratch']}/results/{scenario}/{model_run}.lp.gz")
+        temp("{config[scratch]}/results/{scenario}/{model_run}.lp.gz")
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -72,18 +86,18 @@ rule generate_lp_file:
 rule unzip:
     message: "Unzipping LP file"
     input:
-        "{config['scratch']}/results/{scenario}/{model_run}.lp.gz"
+        "{config[scratch]}/results/{scenario}/{model_run}.lp.gz"
     group:
         "solve"
     output:
-        temp("{config['scratch']}/results/{scenario}/{model_run}.lp")
+        temp("{config[scratch]}/results/{scenario}/{model_run}.lp")
     shell:
         "gunzip -fq {input}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        "{config['scratch']}/results/{scenario}/{model_run}.lp"
+        "{config[scratch]}/results/{scenario}/{model_run}.lp"
     output:
         json="results/{scenario}/{model_run}.json",
         solution="results/{scenario}/{model_run}.sol",
