@@ -57,9 +57,6 @@ rule expand_sample:
     shell:
         "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
 
-
-
-
 rule clean:
     shell:
         "rm -rf results/* && rm -rf results/* && rm -rf modelruns/*"

@@ -71,7 +71,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time=180
     output:
-        temp("{config[scratch]}/results/{scenario}/{model_run}.lp.gz")
+        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=config["scratch"]))
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -86,18 +86,18 @@ rule generate_lp_file:
 rule unzip:
     message: "Unzipping LP file"
     input:
-        "{config[scratch]}/results/{scenario}/{model_run}.lp.gz"
+        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=config["scratch"])
     group:
         "solve"
     output:
-        temp("{config[scratch]}/results/{scenario}/{model_run}.lp")
+        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"])
     shell:
         "gunzip -fq {input}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        "{config[scratch]}/results/{scenario}/{model_run}.lp"
+        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"])
     output:
         json="results/{scenario}/{model_run}.json",
         solution="results/{scenario}/{model_run}.sol",
