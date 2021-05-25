@@ -13,8 +13,6 @@ SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
 GROUPS = pd.read_csv(config['parameters'])['group'].unique()
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
-print("There are {} groups".format(len(GROUPS)))
-print("Model runs: {}".format(MODELRUNS))
 AGG_RESULTS = pd.read_csv(config["agg_results"])
 
 

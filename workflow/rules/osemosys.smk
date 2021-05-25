@@ -57,7 +57,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time=180
     output:
-        "results/{scenario}/{model_run}.lp.gz"
+        temp("{config[scratch]}/results/{scenario}/{model_run}.lp.gz")
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -76,14 +76,14 @@ rule unzip:
     group:
         "solve"
     output:
-        "results/{scenario}/{model_run}.lp"
+        temp("{config[scratch]}/results/{scenario}/{model_run}.lp")
     shell:
         "gunzip -fq {input}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        "results/{scenario}/{model_run}.lp"
+        "{config[scratch]}/results/{scenario}/{model_run}.lp"
     output:
         json="results/{scenario}/{model_run}.json",
         solution="results/{scenario}/{model_run}.sol",
@@ -92,7 +92,6 @@ rule solve_lp:
     params:
         ilp="results/{scenario}/{model_run}.ilp",
         cplex="results/{scenario}/{model_run}.cplex",
-        lp="results/{scenario}/{model_run}.lp"
     benchmark:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
@@ -101,7 +100,7 @@ rule solve_lp:
         time=1080
     group: "solve"
     threads:
-        6
+        3
     shell:
         """
         if [ {config[solver]} = gurobi ]
@@ -110,7 +109,7 @@ rule solve_lp:
         elif [ {config[solver]} = cplex ]
         then
           echo "set threads {threads}"   > {params.cplex}
-          echo "read {params.lp}" 	     >> {params.cplex}
+          echo "read {input}" 	     >> {params.cplex}
           echo "baropt"                  >> {params.cplex}
           echo "write {output.solution}" >> {params.cplex}
           echo "quit"                    >> {params.cplex}
