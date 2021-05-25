@@ -14,8 +14,8 @@ rule add_export:
     log: "results/log/add_export_{scenario}_{model_run}_sample_export.log"
     shell:
         """
-        grep -v -e 'ELGX' {input} > {output} 2> {log}
-        grep -e 'ILGX' {input} | sed -e 's/ILGX/ELGX/' -e 's/-//g' >> {output} 2> {log}
+        grep -v -e 'ILGX' {input} > {output} 2> {log}
+        grep -e 'ELGX' {input} | sed -e 's/ELGX/ILGX/' -e 's/-//g' >> {output} 2> {log}
         """
 
 def datapackage_from_scenario(wildcards):
