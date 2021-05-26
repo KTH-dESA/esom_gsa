@@ -111,7 +111,7 @@ rule solve_lp:
     resources:
         mem_mb=30000,
         disk_mb=20000,
-        time=1080
+        time=720
     group: "solve"
     threads:
         3
@@ -123,7 +123,8 @@ rule solve_lp:
         elif [ {config[solver]} = cplex ]
         then
           echo "set threads {threads}"   > {params.cplex}
-          echo "read {input}" 	     >> {params.cplex}
+          echo "set timelimit 43200"     >> {params.cplex}
+          echo "read {input}" 	         >> {params.cplex}
           echo "baropt"                  >> {params.cplex}
           echo "write {output.solution}" >> {params.cplex}
           echo "quit"                    >> {params.cplex}
