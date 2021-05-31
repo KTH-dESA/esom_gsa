@@ -100,7 +100,7 @@ rule solve_lp:
         expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"])
     output:
         json="results/{scenario}/{model_run}.json",
-        solution="{scratch}/results/{scenario}/{model_run}.sol",
+        solution=expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"]),
     log:
         "results/log/solver_{scenario}_{model_run}.log"
     params:
@@ -138,9 +138,9 @@ rule transform_file:
     message: "Transforming CPLEX sol file '{input}'"
     group: 'results'
     input:
-        "{scratch}/results/{scenario}/{model_run}.sol"
+        expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"])
     output:
-        "{scratch}/results/{scenario}/{model_run}_trans.sol"
+        expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=config["scratch"])
     shell:
         "python workflow/scripts/transform_31072013.py {input} {output}"
 
@@ -148,9 +148,9 @@ rule sort_transformed_solution:
     message: "Sorting transformed CPLEX sol file '{input}'"
     group: 'results'
     input:
-        "{scratch}/results/{scenario}/{model_run}_trans.sol"
+        expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=config["scratch"])
     output:
-        "{scratch}/results/{scenario}/{model_run}_sorted.sol"
+        expand("{scratch}/results/{{scenario}}/{{model_run}}_sorted.sol", scratch=config["scratch"])
     shell:
         "sort {input} > {output}"
 
@@ -158,7 +158,7 @@ rule process_solution:
     message: "Processing {config[solver]} solution for '{output}'"
     group: 'results'
     input:
-        solution="{scratch}/results/{scenario}/{model_run}.sol",
+        solution=expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"]),
         data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
     conda: "../envs/otoole.yaml"
