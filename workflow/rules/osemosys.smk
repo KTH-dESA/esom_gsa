@@ -100,7 +100,7 @@ rule solve_lp:
         expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"])
     output:
         json="results/{scenario}/{model_run}.json",
-        solution="results/{scenario}/{model_run}.sol",
+        solution="{scratch}/results/{scenario}/{model_run}.sol",
     log:
         "results/log/solver_{scenario}_{model_run}.log"
     params:
@@ -136,26 +136,29 @@ rule solve_lp:
 
 rule transform_file:
     message: "Transforming CPLEX sol file '{input}'"
+    group: 'results'
     input:
-        "results/{scenario}/{model_run}.sol"
+        "{scratch}/results/{scenario}/{model_run}.sol"
     output:
-        "results/{scenario}/{model_run}_trans.sol"
+        "{scratch}/results/{scenario}/{model_run}_trans.sol"
     shell:
         "python workflow/scripts/transform_31072013.py {input} {output}"
 
 rule sort_transformed_solution:
     message: "Sorting transformed CPLEX sol file '{input}'"
+    group: 'results'
     input:
-        "results/{scenario}/{model_run}_trans.sol"
+        "{scratch}/results/{scenario}/{model_run}_trans.sol"
     output:
-        "results/{scenario}/{model_run}_sorted.sol"
+        "{scratch}/results/{scenario}/{model_run}_sorted.sol"
     shell:
         "sort {input} > {output}"
 
 rule process_solution:
     message: "Processing {config[solver]} solution for '{output}'"
+    group: 'results'
     input:
-        solution="results/{scenario}/{model_run}.sol",
+        solution="{scratch}/results/{scenario}/{model_run}.sol",
         data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
     conda: "../envs/otoole.yaml"
@@ -166,7 +169,7 @@ rule process_solution:
         "mkdir -p {params.folder} && otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
 
 rule get_objective_value:
-    input: expand("results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    input: expand("{scratch}/results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
     output: "results/objective.csv"
     shell:
         """

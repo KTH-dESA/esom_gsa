@@ -29,7 +29,7 @@ rule get_status:
         modelruns=len(MODELRUNS),
         scenarios=len(SCENARIOS)
     # input: expand("results/{scenario}/{model_run}.lp.gz", model_run=MODELRUNS, scenario=SCENARIOS.index)
-    input: expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    input: expand("results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
     # input: ["results/1/3.json"]
     output: "results/status.csv"
     log: "results/log/status.log"
