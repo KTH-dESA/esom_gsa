@@ -169,12 +169,17 @@ rule process_solution:
         "mkdir -p {params.folder} && otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
 
 rule get_objective_value:
-    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    input: expand("{scratch}/results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index, scratch=config["scratch"])
     output: "results/objective.csv"
     shell:
         """
-        for FILE in {input} do
-        OBJ=head $FILE | grep 'objectiveValue' | cut -f 2 -d '='
-        echo '{scenario},$FILE,$OBJ' >> {output}
-        end;
+        #! /bin/bash -x
+        echo "SCENARIO,FILE,OBJECTIVE,STATUS" > objective.csv
+        for FILE in $(ls results/1/*.sol)
+        do
+        OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
+        STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
+        JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
+        echo "1,$JOB,$OBJ,$STATUS" >> {output}
+        done
         """

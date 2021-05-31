@@ -14,6 +14,7 @@ GROUPS = pd.read_csv(config['parameters'])['group'].unique()
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
 AGG_RESULTS = pd.read_csv(config["agg_results"])
+SCRATCH = config["scratch"]
 
 
 include: "rules/osemosys.smk"
@@ -29,7 +30,7 @@ rule get_status:
         modelruns=len(MODELRUNS),
         scenarios=len(SCENARIOS)
     # input: expand("results/{scenario}/{model_run}.lp.gz", model_run=MODELRUNS, scenario=SCENARIOS.index)
-    input: expand("results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    input: expand("{scratch}/results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index, scratch=config["scratch"])
     # input: ["results/1/3.json"]
     output: "results/status.csv"
     log: "results/log/status.log"
@@ -41,11 +42,15 @@ rule get_status:
         elif [ {config[solver]} = cplex ]
             python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
         else
-            for FILE in {input} do
-            BNAME=$(basename "$FILE" .json)
-            OBJ=head $BNAME.sol | grep 'solutionStatusString' | cut -f 2 -d '='
-            echo '{scenario},$FILE,$OBJ' >> {output}
-            end;
+            #! /bin/bash -x
+            echo "SCENARIO,FILE,OBJECTIVE,STATUS" > objective.csv
+            for FILE in $(ls results/1/*.sol)
+            do
+            OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
+            STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
+            JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
+            echo "1,$JOB,$OBJ,$STATUS" >> {output}
+            done
         fi
         """
 
