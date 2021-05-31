@@ -140,11 +140,11 @@ rule zip_solution:
     message: "Zip up solution file {input}"
     group: "solve"
     input: rules.solve_lp.output.solution
-    output: temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=config["scratch"]))
+    output: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=config["scratch"])
     shell: "gzip {input}"
 
 rule unzip_solution:
-    message: "Zip up solution file {input}"
+    message: "Unzip solution file {input}"
     group: "results"
     input: rules.zip_solution.output
     output: temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"]))
