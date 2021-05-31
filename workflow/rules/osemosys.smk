@@ -169,7 +169,7 @@ rule process_solution:
         "mkdir -p {params.folder} && otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
 
 rule get_objective_value:
-    input: expand("{scratch}/results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
     output: "results/objective.csv"
     shell:
         """
