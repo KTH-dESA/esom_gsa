@@ -20,7 +20,7 @@ include: "rules/osemosys.smk"
 
 rule all:
     input:
-        "results/status.csv"
+        ["results/status.csv", "results/objective.csv"]
         # expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index),
     message: "Running pipeline to generate the files '{input}'"
 
@@ -34,7 +34,20 @@ rule get_status:
     output: "results/status.csv"
     log: "results/log/status.log"
     shell:
-        "python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}"
+        """
+        if [ {config[solver]} = gurobi ]
+        then
+            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
+        elif [ {config[solver]} = cplex ]
+            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
+        else
+            for FILE in {input} do
+            BNAME=$(basename "$FILE" .json)
+            OBJ=head $BNAME.sol | grep 'solutionStatusString' | cut -f 2 -d '='
+            echo '{scenario},$FILE,$OBJ' >> {output}
+            end;
+        fi
+        """
 
 rule create_sample:
     message: "Creating sample for '{params.replicates}' trajectories and '{params.parameters}' parameters"

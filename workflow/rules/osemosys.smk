@@ -134,6 +134,24 @@ rule solve_lp:
         fi
         """
 
+rule transform_file:
+    message: "Transforming CPLEX sol file '{input}'"
+    input:
+        "results/{scenario}/{model_run}.sol"
+    output:
+        "results/{scenario}/{model_run}_trans.sol"
+    shell:
+        "python workflow/scripts/transform_31072013.py {input} {output}"
+
+rule sort_transformed_solution:
+    message: "Sorting transformed CPLEX sol file '{input}'"
+    input:
+        "results/{scenario}/{model_run}_trans.sol"
+    output:
+        "results/{scenario}/{model_run}_sorted.sol"
+    shell:
+        "sort {input} > {output}"
+
 rule process_solution:
     message: "Processing {config[solver]} solution for '{output}'"
     input:
@@ -141,8 +159,19 @@ rule process_solution:
         data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
     conda: "../envs/otoole.yaml"
-    log: "results/process_solution_{scenario}_{model_run}.log"
+    log: "results/process_solution_{scenario}_{model_run, \d+}.log"
     params:
-        folder="results/{scenario}/{model_run}"
+        folder="results/{scenario}/{model_run, \d+}"
     shell:
         "mkdir -p {params.folder} && otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
+
+rule get_objective_value:
+    input: expand("results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    output: "results/objective.csv"
+    shell:
+        """
+        for FILE in {input} do
+        OBJ=head $FILE | grep 'objectiveValue' | cut -f 2 -d '='
+        echo '{scenario},$FILE,$OBJ' >> {output}
+        end;
+        """
