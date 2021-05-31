@@ -4,6 +4,8 @@ wildcard_constraints:
     modelrun="\d+",
     scenarios="\d+"
 
+ruleorder: unzip_solution > solve_lp
+
 rule add_export:
     message: "Adds matching export parameters"
     params:
@@ -134,11 +136,24 @@ rule solve_lp:
         fi
         """
 
+rule zip_solution:
+    message: "Zip up solution file {input}"
+    group: "solve"
+    input: rules.solve_lp.output.solution
+    output: temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=config["scratch"]))
+    shell: "gzip {input}"
+
+rule unzip_solution:
+    message: "Zip up solution file {input}"
+    group: "results"
+    input: rules.zip_solution.output
+    output: temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"]))
+    shell: "gunzip {input}"
+
 rule transform_file:
     message: "Transforming CPLEX sol file '{input}'"
     group: 'results'
-    input:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"])
+    input: rules.unzip_solution.output
     output:
         temp(expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=config["scratch"]))
     shell:
