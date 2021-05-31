@@ -21,7 +21,9 @@ include: "rules/osemosys.smk"
 
 rule all:
     input:
-        ["results/status.csv", "results/objective.csv"]
+        ["results/status.csv", "results/objective.csv",
+         expand("results/{scenario}/{model_run}/{x}.csv", x=RESULTS.index, model_run=MODELRUNS, scenario=SCENARIOS.index)
+         ]
         # expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index),
     message: "Running pipeline to generate the files '{input}'"
 
