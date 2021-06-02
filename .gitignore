@@ -4,6 +4,10 @@
 # Snakemake
 .snakemake
 
+# Cluster
+*.log
+*.out
+
 # Workflow
 config
 modelruns
