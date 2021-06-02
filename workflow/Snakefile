@@ -21,10 +21,9 @@ include: "rules/osemosys.smk"
 
 rule all:
     input:
-        ["results/status.csv", "results/objective.csv",
+        [expand("results/objective_{scenario}.csv", scenario=SCENARIOS.index),
          expand("results/{scenario}/{model_run}/{x}.csv", x=RESULTS.index, model_run=MODELRUNS, scenario=SCENARIOS.index)
          ]
-        # expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index),
     message: "Running pipeline to generate the files '{input}'"
 
 rule get_status:
@@ -45,8 +44,8 @@ rule get_status:
             python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
         else
             #! /bin/bash -x
-            echo "SCENARIO,FILE,OBJECTIVE,STATUS" > objective.csv
-            for FILE in $(ls results/1/*.sol)
+            echo "SCENARIO,FILE,OBJECTIVE,STATUS" > {output}
+            for FILE in ({input})
             do
             OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
             STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')

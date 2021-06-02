@@ -7,7 +7,7 @@ wildcard_constraints:
 ruleorder: unzip_solution > solve_lp
 
 rule add_export:
-    message: "Adds matching export parameters"
+    message: "Adds matching export parameters for TEMBA"
     params:
         parameters=config['parameters']
     group: "gen_lp"
@@ -73,7 +73,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time=180
     output:
-        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=config["scratch"]))
+        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=config["scratch"])
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -92,9 +92,9 @@ rule unzip:
     group:
         "solve"
     output:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"])
+        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"]))
     shell:
-        "gunzip -fq {input}"
+        "gunzip -fcq {input} > {output}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
@@ -139,16 +139,16 @@ rule solve_lp:
 rule zip_solution:
     message: "Zip up solution file {input}"
     group: "solve"
-    input: rules.solve_lp.output.solution
+    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"])
     output: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=config["scratch"])
-    shell: "gzip {input}"
+    shell: "gzip -fcq {input} > {output}"
 
 rule unzip_solution:
     message: "Unzip solution file {input}"
     group: "results"
-    input: rules.zip_solution.output
+    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=config["scratch"])
     output: temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"]))
-    shell: "gunzip {input}"
+    shell: "gunzip -fcq {input} > {output}"
 
 rule transform_file:
     message: "Transforming CPLEX sol file '{input}'"
@@ -177,24 +177,30 @@ rule process_solution:
         data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
     conda: "../envs/otoole.yaml"
-    log: "results/process_solution_{scenario}_{model_run, \d+}.log"
+    log: "results/log/process_solution_{scenario}_{model_run, \d+}.log"
     params:
         folder="results/{scenario}/{model_run, \d+}"
     shell:
         "mkdir -p {params.folder} && otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
 
+rule get_statistics:
+    message: "Extract the CPLEX statistics from the sol file"
+    input: rules.solve_lp.output.solution
+    output: "results/{scenario}/{model_run}.stats"
+    group: "solve"
+    shell: "head -n 27 {input} | tail -n 25 > {output}"
+
 rule get_objective_value:
-    input: expand("{scratch}/results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index, scratch=config["scratch"])
-    output: "results/objective.csv"
+    input: expand("results/{{scenario}}/{model_run}.stats", model_run=MODELRUNS)
+    output: "results/objective_{scenario}.csv"
     shell:
         """
-        #! /bin/bash -x
-        echo "SCENARIO,FILE,OBJECTIVE,STATUS" > objective.csv
-        for FILE in $(ls results/1/*.sol)
+        echo "FILE,OBJECTIVE,STATUS" > {output}
+        for FILE in {input}
         do
         OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
         STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
         JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
-        echo "1,$JOB,$OBJ,$STATUS" >> {output}
+        echo "$JOB,$OBJ,$STATUS" >> {output}
         done
         """
