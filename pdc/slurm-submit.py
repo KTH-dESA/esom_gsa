@@ -9,7 +9,7 @@ from snakemake.utils import read_job_properties
 import slurm_utils
 
 # cookiecutter arguments
-SBATCH_DEFAULTS = """account=2021-17 time=5"""
+SBATCH_DEFAULTS = """account=2021-51 time=10"""
 CLUSTER_CONFIG = ""
 ADVANCED_ARGUMENT_CONVERSION = {"yes": True, "no": False}[
     "no"
