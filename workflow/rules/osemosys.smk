@@ -154,6 +154,7 @@ rule transform_file:
     message: "Transforming CPLEX sol file '{input}'"
     group: 'results'
     input: rules.unzip_solution.output
+    conda: "../envs/otoole.yaml"
     output:
         temp(expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=config["scratch"]))
     shell:
@@ -173,15 +174,17 @@ rule process_solution:
     message: "Processing {config[solver]} solution for '{output}'"
     group: 'results'
     input:
-        solution=expand("{scratch}/results/{{scenario}}/{{model_run}}_sorted.sol", scratch=config["scratch"]),
+        solution=rules.sort_transformed_solution.output,
         data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
     conda: "../envs/otoole.yaml"
     log: "results/log/process_solution_{scenario}_{model_run, \d+}.log"
     params:
         folder="results/{scenario}/{model_run, \d+}"
-    shell:
-        "mkdir -p {params.folder} && otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} 2> {log}"
+    shell: """
+        mkdir -p {params.folder}
+        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} &> {log}
+        """
 
 rule get_statistics:
     message: "Extract the CPLEX statistics from the sol file"
