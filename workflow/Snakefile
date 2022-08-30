@@ -15,6 +15,7 @@ GROUPS = pd.read_csv(config['parameters'])['group'].unique()
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
 AGG_RESULTS = pd.read_csv(config["agg_results"])
 SCRATCH = "temp"
+ZIP = '.gz' if config['zip'] else ''
 
 include: "rules/osemosys.smk"
 

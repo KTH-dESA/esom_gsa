@@ -80,7 +80,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time=180
     output:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=SCRATCH)
+        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp{zip_extension}", scratch=SCRATCH, zip_extension=ZIP)
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -147,7 +147,7 @@ rule zip_solution:
     message: "Zip up solution file {input}"
     group: "solve"
     input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=SCRATCH)
-    output: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=SCRATCH)
+    output: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol{zip_extension}", scratch=SCRATCH, zip_extension=ZIP)
     shell: "gzip -fcq {input} > {output}"
 
 rule unzip_solution:
