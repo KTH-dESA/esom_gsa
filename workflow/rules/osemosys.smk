@@ -80,7 +80,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time=180
     output:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp{zip_extension}", scratch=SCRATCH, zip_extension=ZIP)
+        expand("temp/results/{{scenario}}/{{model_run}}.lp{zip_extension}", zip_extension=ZIP)
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -95,21 +95,21 @@ rule generate_lp_file:
 rule unzip:
     message: "Unzipping LP file"
     input:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=SCRATCH)
+        "temp/results/{scenario}/{model_run}.lp.gz"
     group:
         "solve"
     output:
-        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=SCRATCH))
+        temp("temp/results/{scenario}/{model_run}.lp")
     shell:
         "gunzip -fcq {input} > {output}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=SCRATCH)
+        "temp/results/{scenario}/{model_run}.lp"
     output:
         json="results/{scenario}/{model_run}.json",
-        solution=temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=SCRATCH))
+        solution=temp("temp/results/{scenario}/{model_run}.sol")
     log:
         "results/log/solver_{scenario}_{model_run}.log"
     params:
@@ -146,15 +146,15 @@ rule solve_lp:
 rule zip_solution:
     message: "Zip up solution file {input}"
     group: "solve"
-    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=SCRATCH)
-    output: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol{zip_extension}", scratch=SCRATCH, zip_extension=ZIP)
+    input: "temp/results/{scenario}/{model_run}.sol"
+    output: expand("temp/results/{{scenario}}/{{model_run}}.sol{zip_extension}", zip_extension=ZIP)
     shell: "gzip -fcq {input} > {output}"
 
 rule unzip_solution:
     message: "Unzip solution file {input}"
     group: "results"
-    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=SCRATCH)
-    output: temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=SCRATCH))
+    input: "temp/results/{scenario}/{model_run}.sol.gz"
+    output: temp("temp/results/{scenario}/{model_run}.sol")
     shell: "gunzip -fcq {input} > {output}"
 
 rule transform_file:
@@ -163,7 +163,7 @@ rule transform_file:
     input: rules.unzip_solution.output
     conda: "../envs/otoole.yaml"
     output:
-        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=SCRATCH))
+        temp("temp/results/{scenario}/{model_run}_trans.sol")
     shell:
         "python workflow/scripts/transform_31072013.py {input} {output}"
 
@@ -171,9 +171,9 @@ rule sort_transformed_solution:
     message: "Sorting transformed CPLEX sol file '{input}'"
     group: 'results'
     input:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=SCRATCH)
+        "temp/results/{scenario}/{model_run}_trans.sol"
     output:
-        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}_sorted.sol", scratch=SCRATCH))
+        temp("temp/results/{scenario}/{model_run}_sorted.sol")
     shell:
         "sort {input} > {output}"
 
