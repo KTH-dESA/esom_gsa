@@ -20,6 +20,7 @@ temp
 *.lp.gz
 *.lp
 *.sol
+dag.png
 
 # Vagrant
 .vagrant

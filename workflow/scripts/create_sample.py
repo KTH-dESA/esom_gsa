@@ -4,14 +4,18 @@ Arguments
 ---------
 replicates : int
     The number of model runs to generate
+
 path_to_parameters : str
     File containing the parameters to generate a sample for
+
+sample_file : str
+    File path to save sample to
 
 Usage
 -----
 To run the script on the command line, type::
 
-    python create_sample.py 10 path/to/parameters.csv
+    python create_sample.py path/to/parameters.csv path/to/save.txt 10
 
 The ``parameters.csv`` CSV file should be formatted as follows::
 
@@ -26,32 +30,19 @@ import numpy as np
 import csv
 from typing import List
 import sys
+import utils
 
 from logging import getLogger
 
 logger = getLogger(__name__)
 
-def main(parameters: List, sample_file: str, replicates: int):
+def main(parameters: dict, sample_file: str, replicates: int):
 
-    problem = {}
-    problem['num_vars'] = len(parameters)
-
-    names = []
-    bounds = []
-    groups = []
-    for parameter in parameters:
-        names.append(parameter['name'] + ";" + parameter['indexes'])
-        groups.append(parameter['group'])
-        min_value = 0
-        max_value = 1
-        bounds.append([min_value, max_value])
-
-    problem['names'] = names
-    problem['bounds'] = bounds
-    problem['groups'] = groups
+    problem = utils.create_salib_problem(parameters)
 
     sample = morris.sample(problem, N=50, optimal_trajectories=replicates,
                            local_optimization=True, seed=42)
+
     np.savetxt(sample_file, sample, delimiter=',')
 
 
@@ -62,4 +53,5 @@ if __name__ == "__main__":
     replicates = int(sys.argv[3])
     with open(parameters_file, 'r') as csv_file:
         reader = list(csv.DictReader(csv_file))
+
     main(reader, sample_file, replicates)

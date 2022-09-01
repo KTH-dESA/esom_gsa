@@ -17,10 +17,11 @@ AGG_RESULTS = pd.read_csv(config["agg_results"])
 ZIP = '.gz' if config['zip'] else ''
 
 include: "rules/osemosys.smk"
+include: "rules/results.smk"
 
 rule all:
     input:
-        [expand("results/objective_{scenario}.csv", scenario=SCENARIOS.index),
+        [expand("results/SA_{scenario}.csv", scenario=SCENARIOS.index),
          expand("results/{scenario}/{model_run}/{x}.csv", x=RESULTS.index, model_run=MODELRUNS, scenario=SCENARIOS.index)
          ]
     message: "Running pipeline to generate the files '{input}'"
