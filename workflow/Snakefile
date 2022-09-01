@@ -14,14 +14,14 @@ GROUPS = pd.read_csv(config['parameters'])['group'].unique()
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
 AGG_RESULTS = pd.read_csv(config["agg_results"])
-SCRATCH = config["scratch"]
-
+ZIP = '.gz' if config['zip'] else ''
 
 include: "rules/osemosys.smk"
+include: "rules/results.smk"
 
 rule all:
     input:
-        [expand("results/objective_{scenario}.csv", scenario=SCENARIOS.index),
+        [expand("results/SA_{scenario}.csv", scenario=SCENARIOS.index),
          expand("results/{scenario}/{model_run}/{x}.csv", x=RESULTS.index, model_run=MODELRUNS, scenario=SCENARIOS.index)
          ]
     message: "Running pipeline to generate the files '{input}'"
@@ -31,7 +31,7 @@ rule get_status:
         modelruns=len(MODELRUNS),
         scenarios=len(SCENARIOS)
     # input: expand("results/{scenario}/{model_run}.lp.gz", model_run=MODELRUNS, scenario=SCENARIOS.index)
-    input: expand("{scratch}/results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index, scratch=config["scratch"])
+    input: expand("temp/results/{scenario}/{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
     # input: ["results/1/3.json"]
     output: "results/status.csv"
     log: "results/log/status.log"
@@ -78,7 +78,7 @@ rule expand_sample:
 
 rule clean:
     shell:
-        "rm -rf results/* && rm -rf results/* && rm -rf modelruns/*"
+        "rm -rf results/* && rm -rf results/* && rm -rf modelruns/* && rm -rf temp/* "
 
 rule clean_plots:
     shell:
@@ -102,4 +102,4 @@ rule plot_dag:
     output: "dag.png"
     conda: "envs/dag.yaml"
     shell:
-        "dot -Tpng {input} > dag.png && open dag.png"
+        "dot -Tpng {input} > dag.png && xdg-open dag.png"

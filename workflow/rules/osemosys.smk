@@ -6,6 +6,12 @@ wildcard_constraints:
 
 ruleorder: unzip_solution > solve_lp
 
+def solver_output(wildcards):
+    if config['solver'] == 'cplex':
+        return rules.sort_transformed_solution.output
+    else: 
+        return rules.unzip_solution.output
+
 rule add_export:
     message: "Adds matching export parameters for TEMBA"
     params:
@@ -16,6 +22,7 @@ rule add_export:
     log: "results/log/add_export_{scenario}_{model_run}_sample_export.log"
     shell:
         """
+        set +o pipefail
         grep -v -e 'ILGX' {input} > {output} 2> {log}
         grep -e 'ELGX' {input} | sed -e 's/ELGX/ILGX/' -e 's/-//g' >> {output} 2> {log}
         """
@@ -73,7 +80,7 @@ rule generate_lp_file:
         disk_mb=16000,
         time=180
     output:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=config["scratch"])
+        expand("temp/results/{{scenario}}/{{model_run}}.lp{zip_extension}", zip_extension=ZIP)
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -88,21 +95,21 @@ rule generate_lp_file:
 rule unzip:
     message: "Unzipping LP file"
     input:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp.gz", scratch=config["scratch"])
+        "temp/results/{scenario}/{model_run}.lp.gz"
     group:
         "solve"
     output:
-        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"]))
+        temp("temp/results/{scenario}/{model_run}.lp")
     shell:
         "gunzip -fcq {input} > {output}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}.lp", scratch=config["scratch"])
+        "temp/results/{scenario}/{model_run}.lp"
     output:
         json="results/{scenario}/{model_run}.json",
-        solution=temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"]))
+        solution=temp("temp/results/{scenario}/{model_run}.sol")
     log:
         "results/log/solver_{scenario}_{model_run}.log"
     params:
@@ -139,15 +146,15 @@ rule solve_lp:
 rule zip_solution:
     message: "Zip up solution file {input}"
     group: "solve"
-    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"])
-    output: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=config["scratch"])
+    input: "temp/results/{scenario}/{model_run}.sol"
+    output: expand("temp/results/{{scenario}}/{{model_run}}.sol{zip_extension}", zip_extension=ZIP)
     shell: "gzip -fcq {input} > {output}"
 
 rule unzip_solution:
     message: "Unzip solution file {input}"
     group: "results"
-    input: expand("{scratch}/results/{{scenario}}/{{model_run}}.sol.gz", scratch=config["scratch"])
-    output: temp(expand("{scratch}/results/{{scenario}}/{{model_run}}.sol", scratch=config["scratch"]))
+    input: "temp/results/{scenario}/{model_run}.sol.gz"
+    output: temp("temp/results/{scenario}/{model_run}.sol")
     shell: "gunzip -fcq {input} > {output}"
 
 rule transform_file:
@@ -156,7 +163,7 @@ rule transform_file:
     input: rules.unzip_solution.output
     conda: "../envs/otoole.yaml"
     output:
-        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=config["scratch"]))
+        temp("temp/results/{scenario}/{model_run}_trans.sol")
     shell:
         "python workflow/scripts/transform_31072013.py {input} {output}"
 
@@ -164,9 +171,9 @@ rule sort_transformed_solution:
     message: "Sorting transformed CPLEX sol file '{input}'"
     group: 'results'
     input:
-        expand("{scratch}/results/{{scenario}}/{{model_run}}_trans.sol", scratch=config["scratch"])
+        "temp/results/{scenario}/{model_run}_trans.sol"
     output:
-        temp(expand("{scratch}/results/{{scenario}}/{{model_run}}_sorted.sol", scratch=config["scratch"]))
+        temp("temp/results/{scenario}/{model_run}_sorted.sol")
     shell:
         "sort {input} > {output}"
 
@@ -174,7 +181,7 @@ rule process_solution:
     message: "Processing {config[solver]} solution for '{output}'"
     group: 'results'
     input:
-        solution=rules.sort_transformed_solution.output,
+        solution=solver_output,
         data="results/{scenario}/model_{model_run}/datapackage.json"
     output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
     conda: "../envs/otoole.yaml"
@@ -187,11 +194,19 @@ rule process_solution:
         """
 
 rule get_statistics:
-    message: "Extract the CPLEX statistics from the sol file"
+    message: "Extract the {config[solver]} statistics from the sol file"
     input: rules.solve_lp.output.solution
     output: "results/{scenario}/{model_run}.stats"
     group: "solve"
-    shell: "head -n 27 {input} | tail -n 25 > {output}"
+    shell: 
+        """
+        if [ {config[solver]} = cplex ]
+        then
+          head -n 27 {input} | tail -n 25 > {output}
+        else
+          head -n 1 {input} > {output}
+        fi
+        """
 
 rule get_objective_value:
     input: expand("results/{{scenario}}/{model_run}.stats", model_run=MODELRUNS)
@@ -199,11 +214,27 @@ rule get_objective_value:
     shell:
         """
         echo "FILE,OBJECTIVE,STATUS" > {output}
-        for FILE in {input}
-        do
-        OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
-        STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
-        JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
-        echo "$JOB,$OBJ,$STATUS" >> {output}
-        done
+        if [ {config[solver]} = cplex ]
+        then
+          for FILE in {input}
+          do
+          OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
+          STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
+          JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
+          echo "$JOB,$OBJ,$STATUS" >> {output}
+          done
+        elif [ {config[solver]} = cbc ]
+        then
+          i=0
+          for FILE in {input}
+          do
+          OBJ=$(head $FILE | cut -f 5 -d ' ')
+          STATUS=$(head $FILE | cut -f 1 -d ' ')
+          JOB=$FILE
+          echo "$JOB,$OBJ,$STATUS" >> {output}
+          ((i=i+1))
+          done
+        else
+          echo "To be done"
+        fi
         """

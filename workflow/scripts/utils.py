@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from typing import List
 
 def get_model_run_scenario_from_input_filepath(filename: str):
     """Parses filepath to extract useful bits
@@ -58,3 +59,37 @@ def write_results(df: pd.DataFrame, output_filepath: str, index=None) -> None:
         if index:
             df = df.reset_index()
         df.to_feather(output_filepath)
+
+def create_salib_problem(parameters: List) -> dict:
+    """Creates SALib problem from scenario configureation file.
+    
+    Arguments
+    ---------
+    parameters: List
+        List of dictionaries describing problem. Each dictionary must have
+        'name', 'indexes', 'group' keys
+
+    Returns
+    -----
+    problem: dict
+        SALib formatted problem dictionary
+    """
+
+    problem = {}
+    problem['num_vars'] = len(parameters)
+
+    names = []
+    bounds = []
+    groups = []
+    for parameter in parameters:
+        names.append(parameter['name'] + ";" + parameter['indexes'])
+        groups.append(parameter['group'])
+        min_value = 0
+        max_value = 1
+        bounds.append([min_value, max_value])
+
+    problem['names'] = names
+    problem['bounds'] = bounds
+    problem['groups'] = groups
+
+    return problem
