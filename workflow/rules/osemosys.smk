@@ -19,13 +19,13 @@ rule copy_datapackage:
     message: "Copying and modifying datapackage for '{output.folder}'"
     input:
         datapackage=datapackage_from_scenario,
-        sample="modelruns/{scenario}/{model_run}_sample.txt"
+        sample="modelruns/{scenario}/model_{model_run}/sample_{model_run}.txt"
     log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
     conda: "../envs/otoole.yaml"
     group: "gen_lp"
     output:
-        folder=directory("results/{scenario}/model_{model_run, \d+}"),
-        dummy="results/{scenario}/model_{model_run, \d+}/datapackage.json",
+        folder=directory("results/{scenario}/model_{model_run}"),
+        datapackage="results/{scenario}/model_{model_run}/datapackage.json",
     shell:
         "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
 
@@ -34,7 +34,7 @@ rule generate_datafile:
     input:
         datapackage="results/{scenario}/model_{model_run}/datapackage.json"
     output:
-        temp("results/{scenario}/model_{model_run}.txt")
+        temp("temp/{scenario}/model_{model_run}.txt")
     conda: "../envs/otoole.yaml"
     group: "gen_lp"
     log:
@@ -45,9 +45,9 @@ rule generate_datafile:
 rule modify_model_file:
     message: "Adding MODEX sets to model file"
     input:
-        "results/{scenario}/model_{model_run}.txt"
+        "temp/{scenario}/model_{model_run}.txt"
     output:
-        temp("results/{scenario}/model_{model_run}_modex.txt")
+        temp("temp/{scenario}/model_{model_run}_modex.txt")
     group: "gen_lp"
     threads:
         1
@@ -58,14 +58,14 @@ rule modify_model_file:
 rule generate_lp_file:
     message: "Generating the LP file for '{output}'"
     input:
-        data="results/{scenario}/model_{model_run}_modex.txt",
+        data="temp/{scenario}/model_{model_run}_modex.txt",
         model=config['model_file']
     resources:
         mem_mb=64000,
         disk_mb=16000,
         time=180
     output:
-        expand("temp/results/{{scenario}}/{{model_run}}.lp{zip_extension}", zip_extension=ZIP)
+        temp(expand("temp/{{scenario}}/model_{{model_run}}.lp{zip_extension}", zip_extension=ZIP))
     benchmark:
         "benchmarks/gen_lp/{scenario}_{model_run}.tsv"
     log:
@@ -80,26 +80,26 @@ rule generate_lp_file:
 rule unzip:
     message: "Unzipping LP file"
     input:
-        "temp/results/{scenario}/{model_run}.lp.gz"
+        "temp/{scenario}/model_{model_run}.lp.gz"
     group:
         "solve"
     output:
-        temp("temp/results/{scenario}/{model_run}.lp")
+        temp("temp/{scenario}/model_{model_run}.lp")
     shell:
         "gunzip -fcq {input} > {output}"
 
 rule solve_lp:
     message: "Solving the LP for '{output}' using {config[solver]}"
     input:
-        "temp/results/{scenario}/{model_run}.lp"
+        "temp/{scenario}/model_{model_run}.lp"
     output:
-        json="results/{scenario}/{model_run}.json",
-        solution=temp("temp/results/{scenario}/{model_run}.sol")
+        json="modelruns/{scenario}/model_{model_run}/{model_run}.json",
+        solution=temp("temp/{scenario}/model_{model_run}.sol")
     log:
         "results/log/solver_{scenario}_{model_run}.log"
     params:
-        ilp="results/{scenario}/{model_run}.ilp",
-        cplex="results/{scenario}/{model_run}.cplex",
+        ilp="results/{scenario}/model_{model_run}.ilp",
+        cplex="results/{scenario}/model_{model_run}.cplex",
     benchmark:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:
@@ -131,15 +131,15 @@ rule solve_lp:
 rule zip_solution:
     message: "Zip up solution file {input}"
     group: "solve"
-    input: "temp/results/{scenario}/{model_run}.sol"
-    output: expand("temp/results/{{scenario}}/{{model_run}}.sol{zip_extension}", zip_extension=ZIP)
+    input: "temp/{scenario}/model_{model_run}.sol"
+    output: expand("temp/{{scenario}}/{{model_run}}.sol{zip_extension}", zip_extension=ZIP)
     shell: "gzip -fcq {input} > {output}"
 
 rule unzip_solution:
     message: "Unzip solution file {input}"
     group: "results"
-    input: "temp/results/{scenario}/{model_run}.sol.gz"
-    output: temp("temp/results/{scenario}/{model_run}.sol")
+    input: "temp/{scenario}/model_{model_run}.sol.gz"
+    output: temp("temp/{scenario}/model_{model_run}.sol")
     shell: "gunzip -fcq {input} > {output}"
 
 rule transform_file:
@@ -148,7 +148,7 @@ rule transform_file:
     input: rules.unzip_solution.output
     conda: "../envs/otoole.yaml"
     output:
-        temp("temp/results/{scenario}/{model_run}_trans.sol")
+        temp("temp/{scenario}/model_{model_run}_trans.sol")
     shell:
         "python workflow/scripts/transform_31072013.py {input} {output}"
 
@@ -156,9 +156,9 @@ rule sort_transformed_solution:
     message: "Sorting transformed CPLEX sol file '{input}'"
     group: 'results'
     input:
-        "temp/results/{scenario}/{model_run}_trans.sol"
+        "temp/{scenario}/model_{model_run}_trans.sol"
     output:
-        temp("temp/results/{scenario}/{model_run}_sorted.sol")
+        temp("temp/{scenario}/model_{model_run}_sorted.sol")
     shell:
         "sort {input} > {output}"
 
@@ -168,11 +168,11 @@ rule process_solution:
     input:
         solution=solver_output,
         data="results/{scenario}/model_{model_run}/datapackage.json"
-    output: ["results/{{scenario}}/{{model_run, \d+}}/{}.csv".format(x) for x in RESULTS.index]
+    output: ["results/{{scenario}}/model_{{model_run}}/results/{}.csv".format(x) for x in RESULTS.index]
     conda: "../envs/otoole.yaml"
-    log: "results/log/process_solution_{scenario}_{model_run, \d+}.log"
+    log: "results/log/process_solution_{scenario}_{model_run}.log"
     params:
-        folder="results/{scenario}/{model_run, \d+}"
+        folder="results/{scenario}/model_{model_run}/results"
     shell: """
         mkdir -p {params.folder}
         otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} &> {log}
@@ -181,7 +181,7 @@ rule process_solution:
 rule get_statistics:
     message: "Extract the {config[solver]} statistics from the sol file"
     input: rules.solve_lp.output.solution
-    output: "results/{scenario}/{model_run}.stats"
+    output: "modelruns/{scenario}/model_{model_run}/{model_run}.stats"
     group: "solve"
     shell: 
         """
@@ -194,8 +194,8 @@ rule get_statistics:
         """
 
 rule get_objective_value:
-    input: expand("results/{{scenario}}/{model_run}.stats", model_run=MODELRUNS)
-    output: "results/objective_{scenario}.csv"
+    input: expand("modelruns/{{scenario}}/model_{model_run}/{model_run}.stats",  model_run=MODELRUNS)
+    output: "results/{scenario}/objective_{scenario}.csv"
     shell:
         """
         echo "FILE,OBJECTIVE,STATUS" > {output}
