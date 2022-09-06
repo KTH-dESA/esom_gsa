@@ -1,3 +1,1 @@
 name,group,indexes,min_value_base_year,max_value_base_year,min_value_end_year,max_value_end_year,dist,interpolation_index,action
-EmissionsPenalty,carbontax,"SIMPLICITY,CO2",5,10,150,200,unif,YEAR,interpolate
-CapitalCost,ngcapex,"SIMPLICITY,NGCC",2500,2700,1500,1700,unif,YEAR,fixed
