@@ -32,8 +32,9 @@ rule calculate_SA_results:
         parameters = config['parameters']
     input: 
         sample = "modelruns/{scenario}/morris_sample.txt",
-        results = "results/objective_{scenario}.csv"
+        results = "results/{scenario}/objective_{scenario}.csv"
     output: 
-        SA = "results/SA_{scenario}.csv"
+        SA_csv = "results/SA_{scenario}.csv",
+        SA_png = "results/SA_{scenario}.png"
     conda: "../envs/sample.yaml"
-    shell: "python workflow/scripts/analyze_results.py {params.parameters} {input.sample} {input.results} {output.SA}"
+    shell: "python workflow/scripts/analyze_results.py {params.parameters} {input.sample} {input.results} {output.SA_csv}"
