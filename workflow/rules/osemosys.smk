@@ -13,7 +13,7 @@ def solver_output(wildcards):
         return rules.unzip_solution.output
 
 rule add_export:
-    message: "Adds matching export parameters for TEMBA"
+    message: "Adds matching export parameters"
     params:
         parameters=config['parameters']
     group: "gen_lp"
