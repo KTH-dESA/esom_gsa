@@ -12,21 +12,6 @@ def solver_output(wildcards):
     else: 
         return rules.unzip_solution.output
 
-rule add_export:
-    message: "Adds matching export parameters"
-    params:
-        parameters=config['parameters']
-    group: "gen_lp"
-    input: "modelruns/{scenario}/{model_run}_sample_import.txt"
-    output: "modelruns/{scenario}/{model_run}_sample_export.txt"
-    log: "results/log/add_export_{scenario}_{model_run}_sample_export.log"
-    shell:
-        """
-        set +o pipefail
-        grep -v -e 'ILGX' {input} > {output} 2> {log}
-        grep -e 'ELGX' {input} | sed -e 's/ELGX/ILGX/' -e 's/-//g' >> {output} 2> {log}
-        """
-
 def datapackage_from_scenario(wildcards):
     return SCENARIOS.loc[int(wildcards.scenario), 'path']
 
@@ -34,7 +19,7 @@ rule copy_datapackage:
     message: "Copying and modifying datapackage for '{output.folder}'"
     input:
         datapackage=datapackage_from_scenario,
-        sample="modelruns/{scenario}/{model_run}_sample_export.txt"
+        sample="modelruns/{scenario}/{model_run}_sample.txt"
     log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
     conda: "../envs/otoole.yaml"
     group: "gen_lp"
