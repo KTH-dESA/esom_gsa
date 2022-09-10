@@ -74,9 +74,9 @@ def main(parameters: dict, X: np.array, Y: np.array, save_file: str):
     plot_morris.sample_histograms(subfigs[0], X, problem_hist)
     subfigs[0].patch.set_visible(False)
     axs_left.axis('off')
-    ncols = ceil(len(legend_labels)/2)
+    ncols = 2 if len(legend_labels) < 3 else ceil(len(legend_labels)/2) 
     subfigs[0].legend(handles=legend_handles, ncol=ncols, markerscale=0, frameon=False, framealpha=1)
-    subfigs[0].suptitle(' ', fontsize=(ncols*20))
+    subfigs[0].suptitle(' ', fontsize=(ncols * 20))
 
     axs_right = subfigs[1].subplots(2)
     plot_morris.horizontal_bar_plot(axs_right[0], Si, unit="(\$)")
@@ -87,15 +87,14 @@ def main(parameters: dict, X: np.array, Y: np.array, save_file: str):
 if __name__ == "__main__":
 
     parameters_file = sys.argv[1]
-    model_inputs = sys.argv[2]
-    model_outputs = sys.argv[3]
-    save_file = sys.argv[4]
+    sample = sys.argv[2]
+    model_results = sys.argv[3]
+    save_file = sys.argv[4][:-4] #remove '.csv' extension
 
     with open(parameters_file, 'r') as csv_file:
-        reader = list(csv.DictReader(csv_file))
+        parameters = list(csv.DictReader(csv_file))
     
-    X = np.loadtxt(model_inputs, delimiter=',')
-    Y = pd.read_csv(model_outputs)['OBJECTIVE'].to_numpy()
+    X = np.loadtxt(sample, delimiter=',')
+    Y = pd.read_csv(model_results)['OBJECTIVE'].to_numpy()
     
-    # the [:-4] is to remove the csv file extension 
-    main(reader, X, Y, save_file[:-4])
+    main(parameters, X, Y, save_file)

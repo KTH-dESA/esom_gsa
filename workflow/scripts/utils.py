@@ -61,7 +61,7 @@ def write_results(df: pd.DataFrame, output_filepath: str, index=None) -> None:
         df.to_feather(output_filepath)
 
 def create_salib_problem(parameters: List) -> dict:
-    """Creates SALib problem from scenario configureation file.
+    """Creates SALib problem from scenario configuration file.
     
     Arguments
     ---------

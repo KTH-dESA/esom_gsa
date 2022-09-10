@@ -67,10 +67,8 @@ rule expand_sample:
     params:
         parameters=config['parameters']
     input: "modelruns/{scenario}/morris_sample.txt"
-    # output: expand("modelruns/{{scenario}}/model_{model_run}/sample_{model_run}.txt", x=MODELRUNS)
     output: expand("modelruns/{{scenario}}/model_{model_run}/sample_{model_run}.txt", model_run=MODELRUNS)
     conda: "envs/sample.yaml"
-    # log: "results/log/expand_{scenario}_sample_{model_run}.log"
     log: "results/log/expand_{scenario}_sample.log"
     shell:
         "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
