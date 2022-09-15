@@ -98,8 +98,8 @@ rule solve_lp:
     log:
         "results/log/solver_{scenario}_{model_run}.log"
     params:
-        ilp="results/{scenario}/model_{model_run}.ilp",
-        cplex="results/{scenario}/model_{model_run}.cplex",
+        ilp="results/{scenario}/model_{model_run}/solve.ilp",
+        cplex="results/{scenario}/model_{model_run}/solve.cplex",
     benchmark:
         "benchmarks/solver/{scenario}_{model_run}.tsv"
     resources:

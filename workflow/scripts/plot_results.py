@@ -1,22 +1,25 @@
+import pathlib
 import pandas as pd
 import seaborn as sns
 import sys
-import os
+from pathlib import Path
 
-sns.set_context("paper")
+def main(data:pd.DataFrame, plot_name:pathlib.Path):
 
-results_filepath = sys.argv[1]
-plot_filepath = sys.argv[2]
+    sns.set_context("paper")
 
-nice_name = os.path.split(plot_filepath)[1]
-nice_name = nice_name.split(".")[0]  # Remove file ending
-nicer_name = " ".join([x.capitalize() for x in nice_name.split('_')])
+    plot = sns.relplot(x="YEAR", y='VALUE', kind="line", hue='TECHNOLOGY', data=data)
 
-# Read in the data
-data = pd.read_csv(results_filepath)
+    plot.savefig(plot_name)
 
+if __name__ == '__main__':
 
-plot = sns.relplot(x="YEAR", y='VALUE', ci=None, kind="line", 
-                   hue='TECHNOLOGY', data=data)
-# plot.set_xticklabels(data.loc[:,'YEAR'].unique(), rotation=90)
-plot.savefig(plot_filepath)
+    results_filepath = sys.argv[1]
+    save_directory = sys.argv[2]
+
+    data = pd.read_csv(results_filepath)
+    data = data[~data['TECHNOLOGY'].str.startswith('MINE_')]
+    nice_name = Path(results_filepath).stem.capitalize()
+    plot_name = Path(save_directory, nice_name)
+
+    main(data, plot_name)

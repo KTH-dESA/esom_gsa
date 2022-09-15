@@ -35,7 +35,6 @@ from otoole.write_strategies import WriteDatapackage
 from logging import getLogger
 
 logger = getLogger(__name__)
-
 def process_data(
                  start_year_value: float,
                  end_year_value: float,
@@ -121,7 +120,6 @@ def modify_parameters(
         else:
             try:
                 model_params[name].loc[tuple(index), 'VALUE'] = new_values[0]
-                print(model_params, model_params[name].index)
             except ValueError as ex:
                 msg = "Error raised in parameter {} by index {}"
                 print(msg.format(name, index))

@@ -64,9 +64,8 @@ def plot_histogram(problem: dict, X: np.array, fig: plt.figure):
     fig.patch.set_visible(False)
     ax.axis('off')
     ncols = 2 if len(legend_labels) < 3 else ceil(len(legend_labels)/2) 
-    fig.legend(handles=legend_handles, ncol=ncols, frameon=False)
+    fig.legend(handles=legend_handles, ncol=ncols, frameon=False, fontsize='small')
     fig.suptitle(' ', fontsize=(ncols * 20))
-
 
 def main(parameters: dict, X: np.array, Y: np.array, save_file: str):
 
@@ -78,12 +77,17 @@ def main(parameters: dict, X: np.array, Y: np.array, save_file: str):
     Si.to_df().to_csv(f'{save_file}.csv')
     
     # save graphical resutls 
-    fig = plt.figure(figsize=(16, 8), constrained_layout=True)
-    subfigs = fig.subfigures(1, 2)
-    plot_histogram(problem, X, subfigs[0])
-    axs_right = subfigs[1].subplots(2)
-    plot_morris.horizontal_bar_plot(axs_right[0], Si, unit="(\$)")
-    plot_morris.covariance_plot(axs_right[1], Si, unit="(\$)")
+
+    ''' This is a temp fix for issue 19 '''
+    fig, axs = plt.subplots(2, figsize=(10,8))
+    plot_morris.horizontal_bar_plot(axs[0], Si, unit="(\$)")
+    plot_morris.covariance_plot(axs[1], Si, unit="(\$)")
+    # fig = plt.figure(figsize=(16, 8), constrained_layout=True)
+    # subfigs = fig.subfigures(1, 2)
+    # plot_histogram(problem, X, subfigs[0])
+    # axs_right = subfigs[1].subplots(2)
+    # plot_morris.horizontal_bar_plot(axs_right, Si, unit="(\$)")
+    # plot_morris.covariance_plot(axs_right, Si, unit="(\$)")
 
     fig.savefig(f'{save_file}.png')
 
