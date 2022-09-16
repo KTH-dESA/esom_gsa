@@ -50,18 +50,7 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def main(parameters: dict, X: np.array, Y: np.array, save_file: str):
-
-    problem = utils.create_salib_problem(parameters)
-
-    Si = analyze_morris.analyze(problem, X, Y)
-
-    # Save text based results
-    Si.to_df().to_csv(f'{save_file}.csv')
-    
-    # save graphical resutls 
-    fig = plt.figure(figsize=(16, 8), constrained_layout=True)
-    subfigs = fig.subfigures(1, 2)
+def plot_histogram(problem: dict, X: np.array, fig: plt.figure):
 
     # chnage histogram labels to legend for clarity
     problem_hist = problem.copy()
@@ -70,32 +59,49 @@ def main(parameters: dict, X: np.array, Y: np.array, save_file: str):
     legend_handles = [mlines.Line2D([],[], color='w', marker='.', linewidth=0, markersize=0, label=label) for label in legend_labels]
 
     # plot histogram 
-    axs_left = subfigs[0].subplots(1)
-    plot_morris.sample_histograms(subfigs[0], X, problem_hist)
-    subfigs[0].patch.set_visible(False)
-    axs_left.axis('off')
-    ncols = ceil(len(legend_labels)/2)
-    subfigs[0].legend(handles=legend_handles, ncol=ncols, markerscale=0, frameon=False, framealpha=1)
-    subfigs[0].suptitle(' ', fontsize=(ncols*20))
+    ax = fig.subplots(1)
+    plot_morris.sample_histograms(fig, X, problem_hist)
+    fig.patch.set_visible(False)
+    ax.axis('off')
+    ncols = 2 if len(legend_labels) < 3 else ceil(len(legend_labels)/2) 
+    fig.legend(handles=legend_handles, ncol=ncols, frameon=False, fontsize='small')
+    fig.suptitle(' ', fontsize=(ncols * 20))
 
-    axs_right = subfigs[1].subplots(2)
-    plot_morris.horizontal_bar_plot(axs_right[0], Si, unit="(\$)")
-    plot_morris.covariance_plot(axs_right[1], Si, unit="(\$)")
+def main(parameters: dict, X: np.array, Y: np.array, save_file: str):
+
+    problem = utils.create_salib_problem(parameters)
+
+    Si = analyze_morris.analyze(problem, X, Y, print_to_console=True)
+
+    # Save text based results
+    Si.to_df().to_csv(f'{save_file}.csv')
+    
+    # save graphical resutls 
+
+    ''' This is a temp fix for issue 19 '''
+    fig, axs = plt.subplots(2, figsize=(10,8))
+    plot_morris.horizontal_bar_plot(axs[0], Si, unit="(\$)")
+    plot_morris.covariance_plot(axs[1], Si, unit="(\$)")
+    # fig = plt.figure(figsize=(16, 8), constrained_layout=True)
+    # subfigs = fig.subfigures(1, 2)
+    # plot_histogram(problem, X, subfigs[0])
+    # axs_right = subfigs[1].subplots(2)
+    # plot_morris.horizontal_bar_plot(axs_right, Si, unit="(\$)")
+    # plot_morris.covariance_plot(axs_right, Si, unit="(\$)")
 
     fig.savefig(f'{save_file}.png')
 
 if __name__ == "__main__":
 
     parameters_file = sys.argv[1]
-    model_inputs = sys.argv[2]
-    model_outputs = sys.argv[3]
-    save_file = sys.argv[4]
+    sample = sys.argv[2]
+    model_results = sys.argv[3]
+    save_file = sys.argv[4][:-4] #remove '.csv' extension
 
     with open(parameters_file, 'r') as csv_file:
-        reader = list(csv.DictReader(csv_file))
+        parameters = list(csv.DictReader(csv_file))
     
-    X = np.loadtxt(model_inputs, delimiter=',')
-    Y = pd.read_csv(model_outputs)['OBJECTIVE'].to_numpy()
+    X = np.loadtxt(sample, delimiter=',')
+    Y = pd.read_csv(model_results)['OBJECTIVE'].to_numpy()
     
-    # the [:-4] is to remove the csv file extension 
-    main(reader, X, Y, save_file[:-4])
+    main(parameters, X, Y, save_file)

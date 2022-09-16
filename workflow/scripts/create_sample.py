@@ -1,15 +1,15 @@
-"""Generates a sample from a list of parameters
+"""Generates an unscaled sample from a list of parameters
 
 Arguments
 ---------
-replicates : int
-    The number of model runs to generate
-
 path_to_parameters : str
     File containing the parameters to generate a sample for
 
 sample_file : str
     File path to save sample to
+
+replicates : int
+    The number of model runs to generate
 
 Usage
 -----
