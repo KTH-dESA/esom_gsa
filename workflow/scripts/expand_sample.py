@@ -36,6 +36,11 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
+def assign_sample_value(min_value, max_value, sample):
+    values = [min_value, max_value]
+    points = [0, 1]
+    return np.interp(sample, points, values)
+
 def main(morris_sample, parameters, output_files):
     for model_run, sample_row in enumerate(morris_sample):
         filepath = output_files[model_run]
@@ -56,8 +61,17 @@ def main(morris_sample, parameters, output_files):
                     print(param)
                     raise ValueError(str(ex))
 
-                value_base_year = (max_by - min_by) * column + min_by
-                value_end_year =  (max_ey - min_ey) * column + min_ey
+                value_base_year = assign_sample_value(min_by, max_by, column)
+                value_end_year = assign_sample_value(min_ey, max_ey, column)
+
+                # value_base_year = (max_by + min_by) / 2 * column
+                # value_end_year = (max_ey + min_ey) / 2 * column
+
+                # value_base_year = min_by * column
+                # value_end_year = min_ey * column
+
+                # value_base_year = (max_by - min_by) * column + min_by
+                # value_end_year =  (max_ey - min_ey) * column + min_ey
 
                 data = {'name': param['name'],
                         'indexes': param['indexes'],
