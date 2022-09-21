@@ -31,10 +31,16 @@ import csv
 import numpy as np
 from typing import List
 import sys
+import math
 
 from logging import getLogger
 
 logger = getLogger(__name__)
+
+def assign_sample_value(min_value, max_value, sample):
+    values = [min_value, max_value]
+    points = [0, 1]
+    return np.interp(sample, points, values)
 
 def main(morris_sample, parameters, output_files):
     for model_run, sample_row in enumerate(morris_sample):
@@ -56,9 +62,17 @@ def main(morris_sample, parameters, output_files):
                     print(param)
                     raise ValueError(str(ex))
 
-                value_base_year = (max_by - min_by) * column + min_by
-                value_end_year =  (max_ey - min_ey) * column + min_ey
+                # check for a fixed endpoints
+                if math.isclose(min_by, max_by):
+                    value_base_year = min_by
+                else:
+                    value_base_year = (max_by - min_by) * column + min_by
 
+                if math.isclose(min_ey, max_ey):
+                    value_end_year = min_ey
+                else:
+                    value_end_year =  (max_ey - min_ey) * column + min_ey
+                    
                 data = {'name': param['name'],
                         'indexes': param['indexes'],
                         'value_base_year': value_base_year,
