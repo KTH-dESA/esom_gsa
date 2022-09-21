@@ -24,7 +24,7 @@ To run this script on the command line, use the following::
 """
 import sys
 
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Union, Tuple, Any, Optional
 
 import csv
 import pandas as pd
@@ -40,7 +40,7 @@ def process_data(
                  end_year_value: float,
                  first_year: int,
                  last_year: int
-                 ) -> pd.DataFrame:
+                 ) -> np.array:
     """Interpolate data between min and max years
 
     Arguments
@@ -53,18 +53,35 @@ def process_data(
         First year of the range to interpolate
     last_year: int
         Last year of the range to interpolate
-    """
-    # df.index = df.index.sortlevel(level=0)[0]
 
+    Returns
+    -------
+    values: np.array
+        Linearlly interpolated values between the start and end year. 
+    """
     values = np.interp([range(int(first_year), int(last_year) + 1)],
                        np.array([int(first_year), int(last_year)]),
                        np.array([float(start_year_value), float(end_year_value)])).T
-
-    # df.loc[tuple(index + [first_year]):tuple(index + [last_year])] = values
     return values
 
 
 def get_types_from_tuple(index: list, param: str, config: Dict) -> Tuple:
+    """Checks datatype of a parameters indices.
+
+    Parameters
+    ----------
+    index : list
+        List of indices for the parameters.
+    param : str
+        Name of parameter
+    config : Dict
+        Input datapackage
+
+    Returns
+    -------
+    typed_index : Tuple
+        Parameter with properly typed value
+    """
     depth = len(index)
     names = config[param]['indices'][0:depth]
     typed_index = []
@@ -80,50 +97,194 @@ def get_types_from_tuple(index: list, param: str, config: Dict) -> Tuple:
 
     return typed_index
 
+def apply_interpolation_action(
+    action : str,
+    inter_index: str,
+    start_year_value : float = None, 
+    end_year_value : Optional[float] = None,
+    first_year : Optional[int] = None,
+    end_year : Optional[int] = None
+) -> Any:
+    """Applies the interploation method. 
+
+    Parameters
+    ----------
+    action : str
+        'Fixed' or 'interpolate'
+    inter_index: str
+        'YEAR' or None
+    start_year_value : float = None
+        Value of the parameter in the start year
+    end_year_value : Optional[float] = None,
+        Value of the parameter in the end year. Only needed if inter_index is 'YEAR' and action is 'interpolate'
+    first_year : Optional[float] = None,
+        First year of the range to interpolate. Only needed if inter_index is 'YEAR'
+    end_year : Optional[float] = None
+        Last year of the range to interpolate. Only needed if inter_index is 'YEAR'
+
+    Returns
+    -------
+    model_params : Any
+        An array with interpolated values over each year, or a single value in a list
+
+    Raises
+    ------
+    ValueError
+        If `action` is not either `fixed` or `interpolate`
+    ValueError
+        If `inter_index` is not `None` or `YEAR`
+    """
+    if action == 'interpolate':
+        new_values = process_data(start_year_value, end_year_value, first_year, end_year)
+    elif action == 'fixed':
+        if not inter_index: # None
+            new_values = [start_year_value]
+        elif inter_index == 'YEAR':
+            new_values = np.full((end_year + 1 - first_year, 1), start_year_value)
+        else:
+            logger.error(f"{inter_index} is not a valid index for the {action} interpolation action")
+            raise ValueError
+    else:
+        logger.error(f"{action} not a valid interpolation action. Choose between 'fixed' and 'interpolate'")
+        raise ValueError
+    return new_values
+
+def apply_yearly_interploted_values(
+    name : str,
+    model_params : Dict[str, pd.DataFrame],
+    index : Tuple,
+    interpolated_values : np.array, 
+    first_year : int,
+    end_year : int
+) -> Dict[str, pd.DataFrame]:
+    """Applies interpolated values over years. 
+
+    Parameters
+    ----------
+    name : str
+        name of OSeMOSYS parameter
+    model_params : Dict[str, pd.DataFrame]
+        Original input OSeMOSYS parameters 
+    index : Tuple
+        Value of the parameter in the start year
+    interpolated_values : np.array
+        Array that will replace existing values
+    first_year : int
+        First year of the range to interpolate
+    end_year : int
+        Last year of the range to interpolate
+
+    Returns
+    -------
+    model_params : Dict[str, pd.DataFrame]
+        Updated input OSeMOSYS parameters 
+
+    Raises
+    ------
+    ValueError
+        If index not found in original dataframe 
+    """
+    try:
+        model_params[name].loc[tuple(index + [first_year]):tuple(index + [end_year])] = interpolated_values
+    except ValueError as ex:
+        logger.error(f"Error raised in parameter {name} by index {[tuple(index + [first_year]), tuple(index + [end_year])]}")
+        raise ValueError(ex)
+    return model_params
+
+def apply_interploted_values(
+    name : str,
+    model_params : Dict[str, pd.DataFrame],
+    index : Tuple,
+    interpolated_values : list, 
+) -> Dict[str, pd.DataFrame]:
+    """Applies interpolated values that ARE NOT index over a set. 
+
+    Parameters
+    ----------
+    name : str
+        name of OSeMOSYS parameter
+    model_params : Dict[str, pd.DataFrame]
+        Original input OSeMOSYS parameters 
+    index : Tuple
+        Value of the parameter in the start year
+    interpolated_values : list
+        Single item list of value to replce existing value
+
+    Returns
+    -------
+    model_params : Dict[str, pd.DataFrame]
+        Updated input OSeMOSYS parameters 
+
+    Raises
+    ------
+    ValueError
+        If index not found in original dataframe 
+    """
+    try:
+        model_params[name].loc[tuple(index), 'VALUE'] = interpolated_values[0]
+    except ValueError as ex:
+        logger.error(f"Error raised in parameter {name} by index {index}")
+        raise ValueError(ex)
+    return model_params
 
 def modify_parameters(
         model_params: Dict[str, pd.DataFrame],
         parameters: List[Dict[str, Union[str, int, float]]],
         config: Dict) ->  Dict[str, pd.DataFrame]:
+    """Modifies model parameters based on Morris Sample. 
+
+    The action and interpolation method are read in from the parameters argument
+    and applied to the model_params based on the interpolation index. 
+
+    If the interpolation index is set to `YEAR` AND the interpolation method is 
+    set to `fixed`, the base year value is set for all years. 
+
+    If the interpolation index is set to `YEAR` AND the interpolation method is 
+    set to `interpolate`, the values between the base and end years are linearlly
+    interpolated. 
+
+    If the interpolation index is set to `None`, then no interpolation takes place. 
+
+    Parameters
+    ----------
+    model_params: Dict[str, pd.DataFrame]
+        Input OSeMOSYS parameters 
+    parameters : List[Dict[str, Union[str, int, float]]]
+        Flattened input parameters for the individual model run
+    config : Dict
+        Input datapackage
+
+    Returns
+    -------
+    model_params : Tuple
+        Parameter with properly typed value
     """
-    """
+
     first_year = model_params['YEAR'].min().values[0]
     end_year = model_params['YEAR'].max().values[0]
 
     for parameter in parameters:
 
+        # retrieve input data
         name = parameter['name']
-        df = model_params[name]
         untyped_index = parameter['indexes'].split(",")
         index = get_types_from_tuple(untyped_index, name, config)
         start_year_value = float(parameter['value_base_year'])
-        end_year_value = parameter['value_end_year']
+        end_year_value = float(parameter['value_end_year'])
         action = parameter['action']
         inter_index = parameter['interpolation_index']
-        if action == 'interpolate':
-            new_values = process_data(start_year_value, end_year_value, first_year, end_year)
-        elif action == 'fixed':
-            if inter_index == 'None':
-                # Create new object and update inplace
-                new_values = [start_year_value]
-            elif inter_index == 'YEAR':
-                # Create new object and update inplace
-                new_values = np.full((end_year + 1 - first_year, 1), start_year_value)
 
+        # retrieve interpolated values
+        new_values = apply_interpolation_action(action, inter_index, start_year_value,
+            end_year_value, first_year, end_year)
+
+        # apply interpolated values
+        logger.info("Updating values for {} in {}".format(index, name))
         if inter_index == 'YEAR':
-            logger.info("Updating values for {} in {}".format(index, name))
-            try:
-                model_params[name].loc[tuple(index + [first_year]):tuple(index + [end_year])] = new_values
-            except ValueError as ex:
-                msg = "Error raised in parameter {} by index {}"
-                print(msg.format(name, [tuple(index + [first_year]), tuple(index + [end_year])]))
+            model_params = apply_yearly_interploted_values(name, model_params, index,
+                new_values, first_year, end_year)
         else:
-            try:
-                model_params[name].loc[tuple(index), 'VALUE'] = new_values[0]
-            except ValueError as ex:
-                msg = "Error raised in parameter {} by index {}"
-                print(msg.format(name, index))
-                raise ValueError(ex)
+            model_params = apply_interploted_values(name, model_params, index, new_values)
 
     return model_params
 
@@ -138,7 +299,6 @@ def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, 
     for name, parameter in model_params.items():
         parameter = parameter.sort_index()
         model_params[name] = parameter
-
     config = reader.input_config
     model_params = modify_parameters(model_params, parameters, config)
     writer.write(model_params, output_filepath, default_values)
