@@ -2,6 +2,10 @@ import os
 import pandas as pd
 from typing import List
 
+from logging import getLogger
+
+logger = getLogger(__name__)
+
 def get_model_run_scenario_from_input_filepath(filename: str):
     """Parses filepath to extract useful bits
 
@@ -70,13 +74,22 @@ def create_salib_problem(parameters: List) -> dict:
         'name', 'indexes', 'group' keys
 
     Returns
-    -----
+    -------
     problem: dict
         SALib formatted problem dictionary
+
+    Raises
+    ------
+    ValueError
+        If only one variable is givin, OR 
+        If only one group is given
     """
 
     problem = {}
     problem['num_vars'] = len(parameters)
+    if problem['num_vars'] <= 1:
+        logger.error(f"Must define at least two variables in problem. User defined {problem['num_vars']} variable(s).")
+        raise ValueError
 
     names = []
     bounds = []
@@ -91,5 +104,9 @@ def create_salib_problem(parameters: List) -> dict:
     problem['names'] = names
     problem['bounds'] = bounds
     problem['groups'] = groups
+    num_groups = len(set(groups))
+    if num_groups <= 1:
+        logger.error(f"Must define at least two groups in problem. User defined {num_groups} group(s).")
+        raise ValueError
 
     return problem
