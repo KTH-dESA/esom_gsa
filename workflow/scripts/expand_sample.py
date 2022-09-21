@@ -31,6 +31,7 @@ import csv
 import numpy as np
 from typing import List
 import sys
+import math
 
 from logging import getLogger
 
@@ -61,18 +62,17 @@ def main(morris_sample, parameters, output_files):
                     print(param)
                     raise ValueError(str(ex))
 
-                value_base_year = assign_sample_value(min_by, max_by, column)
-                value_end_year = assign_sample_value(min_ey, max_ey, column)
+                # check for a fixed endpoints
+                if math.isclose(min_by, max_by):
+                    value_base_year = min_by
+                else:
+                    value_base_year = (max_by - min_by) * column + min_by
 
-                # value_base_year = (max_by + min_by) / 2 * column
-                # value_end_year = (max_ey + min_ey) / 2 * column
-
-                # value_base_year = min_by * column
-                # value_end_year = min_ey * column
-
-                # value_base_year = (max_by - min_by) * column + min_by
-                # value_end_year =  (max_ey - min_ey) * column + min_ey
-
+                if math.isclose(min_ey, max_ey):
+                    value_end_year = min_ey
+                else:
+                    value_end_year =  (max_ey - min_ey) * column + min_ey
+                    
                 data = {'name': param['name'],
                         'indexes': param['indexes'],
                         'value_base_year': value_base_year,
