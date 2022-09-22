@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 configfile: "config/config.yaml"
 localrules: all, clean
 wildcard_constraints:
@@ -18,6 +19,13 @@ ZIP = '.gz' if config['zip'] else ''
 
 include: "rules/osemosys.smk"
 include: "rules/results.smk"
+
+onstart:
+    print('Checking user inputs...')
+    shell("python workflow/scripts/check_inputs.py config/config.yaml")
+
+onsuccess:
+    print('Workflow finished successfully!')
 
 rule all:
     input:

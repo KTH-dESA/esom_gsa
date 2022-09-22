@@ -17,13 +17,13 @@ The ``parameters.csv`` CSV input file should be formatted as follows::
 
     name,group,indexes,min_value_base_year,max_value_base_year,min_value_end_year,max_value_end_year,dist,interpolation_index,action
     DiscountRate,discountrate,"REGION",0.05,0.15,0.05,0.15,unif,None,fixed
-    CapitalCost,CapitalCostNG,"REGION,AONGCCC01N",2100,3100,742,1800,unif,YEAR,interpolate
+    CapitalCost,CapitalCost,"REGION,HYD1",2100,3100,742,1800,unif,YEAR,interpolate
 
 The output sample file is formatted as follows::
 
-   'name', 'indexes', 'value_base_year', 'value_end_year', 'action', 'interpolation_index'
+    name,indexes,value_base_year,value_end_year,action,interpolation_index
     DiscountRate,"REGION",0.05,0.05,fixed,None
-    CapitalCost,"REGION,AONGCCC01N",2100,742,interpolate,YEAR
+    CapitalCost,"REGION,HYD1",2100,742,interpolate,YEAR
 
 """
 import os
@@ -73,12 +73,22 @@ def main(morris_sample, parameters, output_files):
                 else:
                     value_end_year =  (max_ey - min_ey) * column + min_ey
                     
+                # check for datatype on interpolation index
+                # ie. Solves issues further down the workflow 
+                if param['interpolation_index']:
+                    if param['interpolation_index'] in ['None', 'none', '']:
+                        interpolation_index = None
+                    else:
+                        interpolation_index = param['interpolation_index']
+                else:
+                    interpolation_index = None
+
                 data = {'name': param['name'],
                         'indexes': param['indexes'],
                         'value_base_year': value_base_year,
                         'value_end_year': value_end_year,
                         'action': param['action'],
-                        'interpolation_index': param['interpolation_index']}
+                        'interpolation_index': interpolation_index}
                 writer.writerow(data)
 
 if __name__ == "__main__":
