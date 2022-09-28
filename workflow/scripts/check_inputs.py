@@ -39,11 +39,15 @@ def check_datapackage(scenario : int, path: str):
     ------
     FileNotFoundError
         If datapackage does not exist
+    ValueError
+        If datapackage is not a .json
+
     """
     if not Path(path).is_file():
         raise FileNotFoundError(
             f"Datapackage {path} does not exist for scenario {scenario}."
         )
+    check_file_extension(path, 'json')
 
 def check_scenario_file(path : str): 
     """Checks the validity of the scenario file.
@@ -427,6 +431,30 @@ def read_parameters_file(path : str) -> List[Dict[str, Union[str, int, float]]]:
         parameters = list(csv.DictReader(csv_file))
     return parameters
 
+def check_file_extension(file_name, extension):
+    """Checks the file for the correct extension.
+
+    Parameters
+    ----------
+    file_name : str
+        Name of file
+    extension : str
+        Expected file extension
+
+    Rasies
+    ------
+    ValueError
+        If the actual file extension is not the expected. 
+    """
+    _, ending = os.path.splitext(file_name)
+    if not extension.startswith('.'):
+        extension = f".{extension}"
+    if ending != extension:
+        raise ValueError(
+            f"Input configuration file must be a {extension} file. Recieved the" 
+            f"file {file_name} with the extension {ending}"
+        )
+
 def main(config : Dict[str, Any]):
     """Runs a series of checks on input data. 
 
@@ -434,6 +462,11 @@ def main(config : Dict[str, Any]):
     ----------
     config : Dict[str, Any]
         Parsed config.yaml file
+
+    Rasies
+    ------
+    ValueError
+        If the input config file is not a yaml file
     """
 
     # check config file
@@ -447,11 +480,13 @@ def main(config : Dict[str, Any]):
     datapackages = scenario_df['datapackage'].to_list()
     configs = scenario_df['config'].to_list()
     parameters = read_parameters_file(config['parameters'])
-    _, ending = os.path.splitext(configs[0])
     with open(configs[0], "r") as f:
-        user_config = _read_file(f, ending)
+        user_config = _read_file(f, ".yaml")
     
+    # check parameter file 
     check_parameters(datapackages[0], parameters, user_config)
+
+    # check otoole inputs 
 
 
 if __name__ == "__main__":
