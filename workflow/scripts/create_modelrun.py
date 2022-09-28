@@ -5,7 +5,7 @@ Arguments
 <input_filepath>
     Path to the master model datapackage
 <output_filepath>
-    Path to the new model file
+    Path to the new model file directory
 <sample_filepath>
     Path the sample file
 
@@ -30,7 +30,9 @@ import csv
 import pandas as pd
 import numpy as np
 from otoole.read_strategies import ReadDatapackage
-from otoole.write_strategies import WriteDatapackage
+from otoole.write_strategies import WriteCsv
+from otoole.utils import _read_file
+import os
 
 from logging import getLogger
 
@@ -288,27 +290,33 @@ def modify_parameters(
 
     return model_params
 
-def main(input_filepath, output_filepath, parameters: List[Dict[str, Union[str, int, float]]]):
+def main(
+    input_filepath, 
+    output_filepath, 
+    parameters: List[Dict[str, Union[str, int, float]]],
+    user_config):
 
-    reader = ReadDatapackage()
-
-    writer = WriteDatapackage()
+    model_params, default_values = ReadDatapackage(user_config=user_config).read(input_filepath)
 
     logger.info("Reading datapackage {}".format(input_filepath))
-    model_params, default_values = reader.read(input_filepath)
     for name, parameter in model_params.items():
         parameter = parameter.sort_index()
         model_params[name] = parameter
-    config = reader.input_config
-    model_params = modify_parameters(model_params, parameters, config)
-    writer.write(model_params, output_filepath, default_values)
+    model_params = modify_parameters(model_params, parameters, user_config)
+    # WriteDatapackage(user_config=user_config).write(model_params, output_filepath, default_values)
+    WriteCsv(user_config=user_config, ).write(model_params, output_filepath, default_values)
 
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 4:
-        print("Usage: python create_modelrun.py <input_filepath> <output_filepath> <sample_filepath>")
+    if len(sys.argv) != 5:
+        print("Usage: python create_modelrun.py <input_filepath> <output_filepath> <sample_filepath> <user_config>")
     else:
         with open(sys.argv[3], 'r') as csv_file:
             sample = list(csv.DictReader(csv_file))
-        main(sys.argv[1], sys.argv[2], sample)
+
+        _, ending = os.path.splitext(sys.argv[4])
+        with open(sys.argv[4], "r") as f:
+            user_config = _read_file(f, ending)
+
+        main(sys.argv[1], sys.argv[2], sample, user_config)

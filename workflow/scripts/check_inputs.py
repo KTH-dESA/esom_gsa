@@ -14,10 +14,12 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Union, Any
 from otoole.read_strategies import ReadDatapackage
+from otoole.utils import _read_file
 import csv
 import pandas as pd
 import yaml
 import math
+import os
 
 from logging import getLogger
 
@@ -62,17 +64,19 @@ def check_scenario_file(path : str):
         If scenario name is not an int
     """
 
+    expected_headings = ['name','description','datapackage','config']
+
     if not Path(path).is_file():
         raise FileNotFoundError(
             f"Scenario file {path} does not exist. Create the file "
-            "'resources/scenarios.csv' with the headings ['name','description','path']"
+            f"'resources/scenarios.csv' with the headings {expected_headings}"
         )
 
     df = pd.read_csv(path)
-    if list(df) != ['name','description','path']:
+    if list(df) != expected_headings:
         raise ValueError(
             f"Scenario file {path} not formatted correctly. Expected the "
-            f"headings ['name','description','path']. Recieved headings {list(df)}"
+            f"headings {expected_headings}. Recieved headings {list(df)}"
         )
 
     if df.empty:
@@ -84,7 +88,7 @@ def check_scenario_file(path : str):
                 f"All scenario names must be of type int. Scenario {name} is not an int"
             )
 
-    for name, datapackage in zip(df['name'], df['path']):
+    for name, datapackage in zip(df['name'], df['datapackage']):
         check_datapackage(name, datapackage)
 
 def check_model_file(path: str):
@@ -358,7 +362,8 @@ def check_parameter_data(
 
 def check_parameters(
     datapackage : str, 
-    parameters: List[Dict[str, Union[str, int, float]]]
+    parameters : List[Dict[str, Union[str, int, float]]], 
+    user_config : Dict
 ): 
     """Checks parameter file. 
 
@@ -368,6 +373,7 @@ def check_parameters(
         path to master datapackage
     parameters: List[Dict[str, Union[str, int, float]]]
         Flattened parameter file 
+    user_config : 
     
     Raises
     ------
@@ -396,14 +402,12 @@ def check_parameters(
         )
 
     # get model parameter definitions 
-    reader = ReadDatapackage()
-    model_params, _ = reader.read(datapackage)
-    model_config = reader.input_config
+    model_params, _ = ReadDatapackage(user_config=user_config).read(datapackage)
 
     for parameter in parameters:
-        check_parameter_data(parameter, model_config)
+        check_parameter_data(parameter, user_config)
         check_parameter_interpolation_data(parameter)
-        check_parameter_index_data(parameter, model_config, model_params)
+        check_parameter_index_data(parameter, user_config, model_params)
 
 def read_parameters_file(path : str) -> List[Dict[str, Union[str, int, float]]]:
     """Reads in a flattened CSV file
@@ -438,10 +442,16 @@ def main(config : Dict[str, Any]):
     check_solver(config['solver'])
     check_replicates(config['replicates'])
 
-    # check parameter file 
-    datapackages = pd.read_csv(config['datapackage'])['path'].to_list()
+    # read in datapackage path and user_config file
+    scenario_df = pd.read_csv(config['datapackage'])
+    datapackages = scenario_df['datapackage'].to_list()
+    configs = scenario_df['config'].to_list()
     parameters = read_parameters_file(config['parameters'])
-    check_parameters(datapackages[0], parameters)
+    _, ending = os.path.splitext(configs[0])
+    with open(configs[0], "r") as f:
+        user_config = _read_file(f, ending)
+    
+    check_parameters(datapackages[0], parameters, user_config)
 
 
 if __name__ == "__main__":
