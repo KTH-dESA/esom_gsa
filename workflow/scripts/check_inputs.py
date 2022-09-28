@@ -89,11 +89,14 @@ def check_scenario_file(path : str):
     for name in df['name']:
         if not type(name) is int:
             raise TypeError(
-                f"All scenario names must be of type int. Scenario {name} is not an int"
+                f"All scenario names must be of type int. Scenario {name} is "
+                f"not an int"
             )
 
     for name, datapackage in zip(df['name'], df['datapackage']):
         check_datapackage(name, datapackage)
+
+    
 
 def check_model_file(path: str):
     """Checks for existance of model file. 
@@ -431,7 +434,7 @@ def read_parameters_file(path : str) -> List[Dict[str, Union[str, int, float]]]:
         parameters = list(csv.DictReader(csv_file))
     return parameters
 
-def check_file_extension(file_name, extension):
+def check_file_extension(file_name : str, extension : str):
     """Checks the file for the correct extension.
 
     Parameters
@@ -453,6 +456,40 @@ def check_file_extension(file_name, extension):
         raise ValueError(
             f"Input configuration file must be a {extension} file. Recieved the" 
             f"file {file_name} with the extension {ending}"
+        )
+
+def check_otoole_inputs(
+    actual_data : str, 
+    scenario : int,
+    expected_data : str = 'otoole_files.csv',
+):
+    """Checks that scenario data matches what snakemake will expect
+    
+    This is a useful sanity check on the otoole version you are using. 
+
+    Parameters
+    ----------
+    input_data : str
+        path the directory holding otoole csv data
+    expected_data : str = 'otoole_files.csv'
+        name of the file in /resources holding input CSV data
+    scenario : int
+        scenario number
+
+    Raises
+    ------
+    FileNotFoundError
+        If the input csvs do not match the csvs in resources/otoole_files.csv
+    """
+    missing_files = []
+    expected_files = pd.read_csv(Path('resources', expected_data))['inputs'].to_list()
+    for csv in Path(actual_data).iterdir():
+        if csv.stem not in expected_files:
+            missing_files.append(f"{csv.stem}.csv")
+    if missing_files:
+        raise FileNotFoundError(
+            f"The following CSV files are missing in the input data for scenario "
+            f"{scenario} : {missing_files}"
         )
 
 def main(config : Dict[str, Any]):
@@ -477,6 +514,7 @@ def main(config : Dict[str, Any]):
 
     # read in datapackage path and user_config file
     scenario_df = pd.read_csv(config['datapackage'])
+    scenarios = scenario_df['name'].to_list()
     datapackages = scenario_df['datapackage'].to_list()
     configs = scenario_df['config'].to_list()
     parameters = read_parameters_file(config['parameters'])
@@ -487,7 +525,9 @@ def main(config : Dict[str, Any]):
     check_parameters(datapackages[0], parameters, user_config)
 
     # check otoole inputs 
-
+    for scenario, datapackage in zip(scenarios, datapackages):
+        data_dir = Path(Path(datapackage).parent, 'data')
+        check_otoole_inputs(str(data_dir), scenario)
 
 if __name__ == "__main__":
 
