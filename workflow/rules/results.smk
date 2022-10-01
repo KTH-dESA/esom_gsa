@@ -1,19 +1,26 @@
 def get_input(wildcards):
-    input_file = AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['resultfile']
-    return ["results/{scenario}/{modelrun}/{input_file}.csv".format(
-        modelrun=x, input_file=input_file, scenario=y) for x in MODELRUNS for y in SCENARIOS.index]
+    # input_file = RESULTS.set_index('filename').loc[wildcards.result_file]['resultfile']
+    # return ["results/{scenario}/model_{modelrun}/results/{input_file}.csv".format(
+    #     modelrun=x, input_file=input_file, scenario=y) for x in MODELRUNS for y in SCENARIOS.index]
+    input_file = RESULTS.set_index('filename').loc[wildcards.result_file]['resultfile']
+    return ["results/{wildcards.scenario}/model_{modelrun}/results/{input_file}.csv".format(
+        modelrun=x, input_file=input_file, wildcards=wildcards) for x in MODELRUNS]
 
 def get_indices(wildcards):
-    return AGG_RESULTS.set_index('filename').loc[wildcards.agg_result_file]['indices']
+    indices = RESULTS.set_index('filename').loc[wildcards.result_file].dropna().drop('resultfile').to_dict()
+    return {x:indices[x].split(',') for x in indices}
 
 rule extract_results:
-    input: get_input
+    input: 
+        csvs=get_input,
+        config=config_from_scenario
     params:
-        parameter = get_indices
-    log: "results/log/extract_{agg_result_file}.log"
-    output: expand("results/{{agg_result_file}}.{ext}", ext=config['filetype'])
-    conda: "envs/otoole.yaml"
-    script: "scripts/extract_results.py"
+        parameter = get_indices,
+        folder=directory("results/{{scenario}}_summary/")
+    log: "results/log/extract_scenarion_{scenario}_{result_file}.log"
+    output: expand("results/{{scenario}}_summary/{{result_file}}.{ext}", ext=config['filetype'])
+    conda: "../envs/otoole.yaml"
+    script: "../scripts/extract_results.py"
 
 rule calculate_hourly_demand:
     input: expand("results/annual_demand.{ext}", ext=config['filetype'])
@@ -27,14 +34,29 @@ rule calculate_hourly_generation:
     conda: "envs/pandas.yaml"
     script: "scripts/calculate_hourly_generation.py"
 
-rule calculate_SA_results:
+rule calculate_SA_objective:
+    message:
+        "Calcualting objective cost sensitivity measures"
     params: 
         parameters = config['parameters']
     input: 
         sample = "modelruns/{scenario}/morris_sample.txt",
         results = "results/{scenario}/objective_{scenario}.csv"
     output: 
-        SA_csv = "results/SA_{scenario}.csv",
-        SA_png = "results/SA_{scenario}.png"
+        expand("results/{{scenario}}_summary/SA_objective.{ext}",ext=['csv','png'])
     conda: "../envs/sample.yaml"
-    shell: "python workflow/scripts/analyze_results.py {params.parameters} {input.sample} {input.results} {output.SA_csv}"
+    shell: "python workflow/scripts/objective_results.py {params.parameters} {input.sample} {input.results} {output[0]}"
+
+rule calculate_SA_user_defined:
+    message: 
+        "Calculating user defined sensitivity measures"
+    params: 
+        parameters=config['parameters']
+    input:
+        sample="modelruns/{scenario}/morris_sample.txt",
+        results=expand("results/{{scenario}}_summary/{{result_file}}.{ext}", ext=config['filetype'])
+    output:
+        "results/{scenario}_summary/{result_file}_heatmap.png"
+    shell: "python workflow/scripts/user_def_results.py {params.parameters} {input.sample} {input.results} {output}"
+
+    

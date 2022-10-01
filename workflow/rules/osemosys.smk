@@ -196,7 +196,6 @@ rule process_solution:
         datapackage="results/{scenario}/model_{model_run}/datapackage.json",
         config="results/{scenario}/model_{model_run}/config.yaml",
     output: 
-        # ["results/{{scenario}}/model_{{model_run}}/results/{}.csv".format(x) for x in RESULTS.index]
         expand("results/{{scenario}}/model_{{model_run}}/results/{csv}.csv", csv=OUTPUT_FILES)
     conda: "../envs/otoole.yaml"
     log: "results/log/process_solution_{scenario}_{model_run}.log"

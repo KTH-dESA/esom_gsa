@@ -3,18 +3,18 @@ import sys
 configfile: "config/config.yaml"
 localrules: all, clean
 wildcard_constraints:
-    agg_result_file="[a-zA-Z_\-]+",
+    result_file="[a-zA-Z_\-]+",
     scenario="\d+",
     model_run="\d+"
 
 container: "docker://condaforge/mambaforge:4.10.1-0"
 
-RESULTS = pd.read_csv(config["result_params"]).set_index('name')
 SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
 GROUPS = pd.read_csv(config['parameters'])['group'].unique()
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
-AGG_RESULTS = pd.read_csv(config["agg_results"])
+RESULTS = pd.read_csv(config["results"])
+RESULT_FILES = RESULTS['filename'].to_list()
 ZIP = '.gz' if config['zip'] else ''
 INPUT_FILES = pd.read_csv('resources/otoole_files.csv')['inputs'].to_list()
 OUTPUT_FILES = pd.read_csv('resources/otoole_files.csv')['outputs'].dropna().to_list()
@@ -31,8 +31,10 @@ onsuccess:
 
 rule all:
     input:
-        expand("results/SA_{scenario}.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png']),
-        expand("results/{scenario}/model_{model_run}/results/{x}.csv", x=OUTPUT_FILES, model_run=MODELRUNS, scenario=SCENARIOS.index)
+        expand("results/{scenario}_summary/SA_objective.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png']),
+        expand("results/{scenario}/model_{model_run}/results/{x}.csv", x=OUTPUT_FILES, model_run=MODELRUNS, scenario=SCENARIOS.index),
+        expand("results/{scenario}_summary/{result_file}_heatmap.png", scenario=SCENARIOS.index, result_file=RESULT_FILES),
+               
     message: "Running pipeline to generate the files '{input}'"
 
 rule get_status:

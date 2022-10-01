@@ -39,8 +39,7 @@ A YAML file `config.yaml` must be placed in the config directory.
 datapackage: config/scenarios.csv
 
 # Tell the workflow which model results to plot
-result_params: config/results.csv
-agg_results: config/agg_results.csv
+results: config/results.csv
 
 # Filetype options: 'csv' or 'parquet' or 'feather'
 filetype: csv

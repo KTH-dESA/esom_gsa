@@ -424,11 +424,10 @@ def read_parameters_file(path : str) -> List[Dict[str, Union[str, int, float]]]:
     path : str
         file path to parameters.csv
 
-    Returns:
+    Returns
     --------
     parameters : List[Dict[str, Union[str, int, float]]]
         Flattened parameters file
-    
     """
     with open(path, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
