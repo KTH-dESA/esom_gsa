@@ -18,7 +18,7 @@ rule extract_results:
         parameter = get_indices,
         folder=directory("results/{{scenario}}_summary/")
     log: "results/log/extract_scenarion_{scenario}_{result_file}.log"
-    output: expand("results/{{scenario}}_summary/{{result_file}}.{ext}", ext=config['filetype'])
+    output: expand("results/{{scenario}}/{{result_file}}.{ext}", ext=config['filetype'])
     conda: "../envs/otoole.yaml"
     script: "../scripts/extract_results.py"
 
@@ -38,25 +38,40 @@ rule calculate_SA_objective:
     message:
         "Calcualting objective cost sensitivity measures"
     params: 
-        parameters = config['parameters']
+        parameters=config['parameters'],
+        result_type='objective'
     input: 
         sample = "modelruns/{scenario}/morris_sample.txt",
         results = "results/{scenario}/objective_{scenario}.csv"
     output: 
         expand("results/{{scenario}}_summary/SA_objective.{ext}",ext=['csv','png'])
     conda: "../envs/sample.yaml"
-    shell: "python workflow/scripts/objective_results.py {params.parameters} {input.sample} {input.results} {output[0]}"
+    shell: "python workflow/scripts/calculate_SA_results.py {params.parameters} {input.sample} {input.results} {output[0]} {params.result_type}"
 
 rule calculate_SA_user_defined:
+    message:
+        "Calcualting user defined sensitivity measures"
+    params: 
+        parameters=config['parameters'],
+        result_type='variable'
+    input: 
+        sample = "modelruns/{scenario}/morris_sample.txt",
+        results=expand("results/{{scenario}}/{{result_file}}.{ext}", ext=config['filetype'])
+    output: 
+        expand("results/{{scenario}}_summary/SA_{{result_file}}.{ext}",ext=['csv','png'])
+    conda: "../envs/sample.yaml"
+    shell: "python workflow/scripts/calculate_SA_results.py {params.parameters} {input.sample} {input.results} {output[0]} {params.result_type}"
+
+rule create_heatmap:
     message: 
         "Calculating user defined sensitivity measures"
     params: 
         parameters=config['parameters']
     input:
         sample="modelruns/{scenario}/morris_sample.txt",
-        results=expand("results/{{scenario}}_summary/{{result_file}}.{ext}", ext=config['filetype'])
+        results=expand("results/{{scenario}}/{{result_file}}.{ext}", ext=config['filetype'])
     output:
         "results/{scenario}_summary/{result_file}_heatmap.png"
-    shell: "python workflow/scripts/user_def_results.py {params.parameters} {input.sample} {input.results} {output}"
+    shell: "python workflow/scripts/create_heatmap.py {params.parameters} {input.sample} {input.results} {output}"
 
     
