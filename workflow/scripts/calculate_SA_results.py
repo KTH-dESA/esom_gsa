@@ -106,13 +106,13 @@ def sa_results(parameters: dict, X: np.array, Y: np.array, save_file: str):
     Si.to_df().to_csv(f'{save_file}.csv')
     
     # save graphical resutls 
-
+    title = Path(save_file).stem.capitalize()
     fig, axs = plt.subplots(2, figsize=(10,8))
-    # fig.set_title(title)
+    fig.suptitle(title, fontsize=20)
     plot_morris.horizontal_bar_plot(axs[0], Si, unit="(\$)")
     plot_morris.covariance_plot(axs[1], Si, unit="(\$)")
 
-    fig.savefig(f'{save_file}.png')
+    fig.savefig(f'{save_file}.png', bbox_inches='tight')
 
 if __name__ == "__main__":
 

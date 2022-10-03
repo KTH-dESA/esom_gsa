@@ -1,2 +1,2 @@
 resultfile,filename,REGION,TECHNOLOGY,FUEL,EMISSION
-TotalCapacityAnnual,annual_capacity,"R1","RENEWABLE,TRANSMISSION",,
+TotalDiscountedCost,DiscountedCost,"R1",,,
