@@ -57,8 +57,11 @@ def main(input_files: List, output_file: str, indices: Tuple, config: Dict):
         parameters = tuple(itertools.product(*indices.values()))
         indices_expanded = tuple([tuple(indices.keys())] * len(parameters))
         for index, param in zip(indices_expanded, parameters):
-            results = df.xs(param, level=index, drop_level=False)
-            result_dfs.append(results)
+            try:
+                results = df.xs(param, level=index, drop_level=False)
+                result_dfs.append(results)
+            except KeyError as ex:
+                raise ex
         results = pd.concat(result_dfs)
         results = results.reset_index(level='YEAR')
         ################################################################

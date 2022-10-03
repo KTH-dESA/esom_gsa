@@ -13,7 +13,8 @@ def get_indices(wildcards):
 rule extract_results:
     input: 
         csvs=get_input,
-        config=config_from_scenario
+        config=config_from_scenario,
+        # csvs=expand("results/{{scenario}}/model_{{model_run}}/results/{csv}.csv", csv=OUTPUT_FILES)
     params:
         parameter = get_indices,
         folder=directory("results/{{scenario}}_summary/")
