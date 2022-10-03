@@ -1,5 +1,16 @@
-# gui_workflow
-The snakemake workflow for the Gulf UnderSea Interconnector feasibility study
+# Global Sensitivity Analysis of an Energy System Optimisation Model
+
+The snakemake workflow to conduct a global sensitivity analysis
+
+## Getting Started
+
+### Follow the tutorial
+
+    jupyter notebook Tutorial.ipynb
+
+### Create Slides
+
+    jupyter nbconvert Tutorial.ipynb --to slides --post serve
 
 ## Installation
 
