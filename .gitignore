@@ -4,17 +4,23 @@
 # Snakemake
 .snakemake
 
+# Cluster
+*.log
+*.out
+
 # Workflow
 config
 modelruns
 processed_data
 benchmarks
 results
+temp
 *.pdf
 *.csv
 *.lp.gz
 *.lp
 *.sol
+dag.png
 
 # Vagrant
 .vagrant

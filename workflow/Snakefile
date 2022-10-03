@@ -1,39 +1,89 @@
 import pandas as pd
+import sys
 configfile: "config/config.yaml"
-
+localrules: all, clean
 wildcard_constraints:
     agg_result_file="[a-zA-Z_\-]+",
     scenario="\d+",
     model_run="\d+"
 
+container: "docker://condaforge/mambaforge:4.10.1-0"
+
 RESULTS = pd.read_csv(config["result_params"]).set_index('name')
 SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
-MODELRUNS = range(config['replicates'])
+GROUPS = pd.read_csv(config['parameters'])['group'].unique()
+# Calculates number of model runs for the Method of Morris
+MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
 AGG_RESULTS = pd.read_csv(config["agg_results"])
+ZIP = '.gz' if config['zip'] else ''
 
 include: "rules/osemosys.smk"
+include: "rules/results.smk"
+
+onstart:
+    print('Checking user inputs...')
+    shell("python workflow/scripts/check_inputs.py config/config.yaml")
+
+onsuccess:
+    print('Workflow finished successfully!')
 
 rule all:
     input:
-        expand("results/{scenario}/{model_run}.json", model_run=MODELRUNS, scenario=SCENARIOS.index),
-        # expand("results/{agg_result_file}.{ext}", agg_result_file=AGG_RESULTS['filename'], ext=config['filetype']),
-        # expand("results/hourly_demand.{ext}", ext=config['filetype']),
-        # expand("results/hourly_generation.{ext}", ext=config['filetype'])
+        expand("results/SA_{scenario}.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png']),
+        expand("results/{scenario}/model_{model_run}/results/{x}.csv", x=RESULTS.index, model_run=MODELRUNS, scenario=SCENARIOS.index)
     message: "Running pipeline to generate the files '{input}'"
 
+rule get_status:
+    params:
+        modelruns=len(MODELRUNS),
+        scenarios=len(SCENARIOS)
+    input: expand("temp/{scenario}/model_{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
+    output: "results/status.csv"
+    log: "results/log/status.log"
+    shell:
+        """
+        if [ {config[solver]} = gurobi ]
+        then
+            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
+        elif [ {config[solver]} = cplex ]
+            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
+        else
+            #! /bin/bash -x
+            echo "SCENARIO,FILE,OBJECTIVE,STATUS" > {output}
+            for FILE in ({input})
+            do
+            OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
+            STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
+            JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
+            echo "1,$JOB,$OBJ,$STATUS" >> {output}
+            done
+        fi
+        """
+
 rule create_sample:
+    message: "Creating sample for '{params.replicates}' trajectories and '{params.parameters}' parameters"
     params:
         replicates=config['replicates'],
         parameters=config['parameters']
-    output: expand("modelruns/{{scenario}}/{x}_sample.txt", x=range(config['replicates']))
+    output: "modelruns/{scenario}/morris_sample.txt"
     conda: "envs/sample.yaml"
-    log: "results/create_{scenario}_sample.log"
+    log: "results/log/create_{scenario}_sample.log"
     shell:
-        "python workflow/scripts/create_sample.py {params.parameters} {output}"
+        "python workflow/scripts/create_sample.py {params.parameters} {output} {params.replicates}"
+
+rule expand_sample:
+    params:
+        parameters=config['parameters']
+    input: "modelruns/{scenario}/morris_sample.txt"
+    output: expand("modelruns/{{scenario}}/model_{model_run}/sample_{model_run}.txt", model_run=MODELRUNS)
+    conda: "envs/sample.yaml"
+    log: "results/log/expand_{scenario}_sample.log"
+    shell:
+        "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
 
 rule clean:
     shell:
-        "rm -rf results/* && rm -rf results/* && rm -rf modelruns/*"
+        "rm -rf results/* && rm -rf results/* && rm -rf modelruns/* && rm -rf temp/* "
 
 rule clean_plots:
     shell:
@@ -57,4 +107,4 @@ rule plot_dag:
     output: "dag.png"
     conda: "envs/dag.yaml"
     shell:
-        "dot -Tpng {input} > dag.png && open dag.png"
+        "dot -Tpng {input} > dag.png && xdg-open dag.png"

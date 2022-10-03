@@ -2,7 +2,8 @@ sudo apt-get update
 sudo apt-get install coinor-cbc unzip
 
 # 1. Install environment for snakemake
-wget 
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+bash ~/miniconda.sh -b -p $HOME/miniconda
 
 conda install -c conda-forge mamba
 mamba create -c bioconda -c conda-forge -n snakemake snakemake-minimal SALib pandas numpy graphviz glpk seaborn

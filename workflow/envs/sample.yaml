@@ -1,5 +1,11 @@
 channels:
   - conda-forge
 dependencies:
+  - pip
+  - numpy
+  - scipy
+  - matplotlib
+  - pandas
+  - setuptools
   - pip:
     - SALib>=1.4.0b0

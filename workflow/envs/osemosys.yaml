@@ -1,3 +1,4 @@
+name: osemosys
 channels:
   - conda-forge
   - defaults

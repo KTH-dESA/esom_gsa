@@ -26,3 +26,15 @@ rule calculate_hourly_generation:
     output: expand("results/hourly_generation.{ext}", ext=config['filetype'])
     conda: "envs/pandas.yaml"
     script: "scripts/calculate_hourly_generation.py"
+
+rule calculate_SA_results:
+    params: 
+        parameters = config['parameters']
+    input: 
+        sample = "modelruns/{scenario}/morris_sample.txt",
+        results = "results/{scenario}/objective_{scenario}.csv"
+    output: 
+        SA_csv = "results/SA_{scenario}.csv",
+        SA_png = "results/SA_{scenario}.png"
+    conda: "../envs/sample.yaml"
+    shell: "python workflow/scripts/analyze_results.py {params.parameters} {input.sample} {input.results} {output.SA_csv}"

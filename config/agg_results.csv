@@ -1,5 +1,5 @@
 resultfile,indices,filename
-TotalCapacityAnnual,"GLOBAL",annual_capacity
-AnnualEmissions,"GLOBAL",emissions
-Demand,"GLOBAL",annual_demand
-ProductionByTechnology,"GLOBAL",annual_generation
+TotalCapacityAnnual,"REGION",annual_capacity
+AnnualEmissions,"REGION",emissions
+Demand,"REGION",annual_demand
+ProductionByTechnology,"REGION",annual_generation

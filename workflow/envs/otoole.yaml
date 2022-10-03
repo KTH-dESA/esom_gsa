@@ -1,10 +1,19 @@
+name: otoole
 channels:
   - conda-forge
   - defaults
 dependencies:
+  - pip
   - pandas
   - python=3
   - numpy
   - pyarrow
+  - xlrd
+  - pyyaml
+  - pydot
+  - datapackage>=1.9,<2
+  - amply>=0.1.4
+  - networkx
+  - openpyxl
   - pip:
-    - otoole>=0.10
+    - git+https://github.com/willu47/otoole.git@temba
