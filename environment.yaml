@@ -1,0 +1,17 @@
+name: binder-environment
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - numpy
+  - matplotlib
+  - pandas
+  - glpk
+  - coincbc
+  # - seaborn
+  - snakemake-minimal
+  - pyyaml
+  - pip:
+    - SALib>=1.4.0b0
+    - otoole==0.11.0
