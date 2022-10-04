@@ -1,16 +1,19 @@
-name: binder-environment
+name: binder_snakemake
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - numpy
-  - matplotlib
+  - mamba
+  - python>=3
+  - snakemake-minimal
+  - graphviz
   - pandas
+  - matplotlib
+  - numpy
   - glpk
   - coincbc
   # - seaborn
-  - snakemake-minimal
   - pyyaml
   - pip:
     - SALib>=1.4.0b0
