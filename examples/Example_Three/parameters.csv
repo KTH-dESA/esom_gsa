@@ -1,0 +1,7 @@
+name,group,indexes,min_value_base_year,max_value_base_year,min_value_end_year,max_value_end_year,dist,interpolation_index,action
+CapitalCost,capital,"R1,NUCLEAR",XXX,XXX,XXX,XXX,"unif","YEAR","interpolate"
+FixedCost,fixed,"R1,NUCLEAR",XXX,XXX,XXX,XXX,"unif","YEAR","fixed"
+VariableCost,variable,"R1,MINE_URANIUM,1",XXX,XXX,XXX,XXX,"unif","YEAR","interpolate"
+SpecifiedAnnualDemand,demand,"R1,ELECTRICITY",XXX,XXX,XXX,XXX,"unif","YEAR","interpolate"
+InputActivityRatio,IAR,"R1,NUCLEAR,URANIUM,1",XXX,XXX,XXX,XXX,"unif","YEAR","interpolate"
+OperationalLife,oplife,"R1,NUCLEAR",XXX,XXX,XXX,XXX,"unif","","fixed"

@@ -20,9 +20,11 @@ ZIP = '.gz' if config['zip'] else ''
 include: "rules/osemosys.smk"
 include: "rules/results.smk"
 
+args = sys.argv
+config_path = args[args.index("--configfile") + 1]
 onstart:
     print('Checking user inputs...')
-    shell("python workflow/scripts/check_inputs.py config/config.yaml")
+    shell("python workflow/scripts/check_inputs.py {}".format(config_path))
 
 onsuccess:
     print('Workflow finished successfully!')
@@ -30,7 +32,7 @@ onsuccess:
 rule all:
     input:
         expand("results/SA_{scenario}.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png']),
-        expand("results/{scenario}/model_{model_run}/results/{x}.csv", x=RESULTS.index, model_run=MODELRUNS, scenario=SCENARIOS.index)
+        # expand("results/{scenario}/model_{model_run}/results/{x}.csv", x=RESULTS.index, model_run=MODELRUNS, scenario=SCENARIOS.index)
     message: "Running pipeline to generate the files '{input}'"
 
 rule get_status:
