@@ -6,7 +6,7 @@ The snakemake workflow to conduct a global sensitivity analysis
 
 ### Follow the tutorial
 
-    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/KTH-dESA/esom_gsa/envs?labpath=Tutorial.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/KTH-dESA/esom_gsa/envs?labpath=Tutorial.ipynb)
 
     jupyter notebook Tutorial.ipynb
 
