@@ -1,0 +1,12 @@
+name: binder_snakemake
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - mamba
+  - python>=3
+  - snakemake-minimal
+  - graphviz
+  - pandas
+  - SALib
+  - matplotlib
