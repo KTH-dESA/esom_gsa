@@ -22,9 +22,15 @@ OUTPUT_FILES = pd.read_csv('resources/otoole_files.csv')['outputs'].dropna().to_
 include: "rules/osemosys.smk"
 include: "rules/results.smk"
 
+args = sys.argv
+try:
+    config_path = args[args.index("--configfile") + 1]
+except ValueError:
+    config_path = 'config/config.yaml'
+
 onstart:
     print('Checking user inputs...')
-    shell("python workflow/scripts/check_inputs.py config/config.yaml")
+    shell("python workflow/scripts/check_inputs.py {}".format(config_path))
 
 onsuccess:
     print('Workflow finished successfully!')

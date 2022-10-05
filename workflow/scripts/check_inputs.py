@@ -540,4 +540,5 @@ if __name__ == "__main__":
                 parsed_yaml = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+                raise exc
         main(parsed_yaml)

@@ -92,22 +92,19 @@ def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: 
     for year in model_results.index.unique(level='YEAR'):
         Y = sort_results(model_results, year)
         Si = analyze_morris.analyze(problem, X, Y, print_to_console=False)
-        # get_data() because returns masked array
-        # SA_result_data.append(Si['mu_star'])
         SA_result_data.append(Si['mu_star'])
     
     SA_result_data = np.ma.concatenate([SA_result_data])
-    # SA_result_data = np.concatenate(SA_result_data, axis=1)
-    # SA_results = pd.DataFrame(np.ma.getdata(SA_result_data))
-    columns = [x['name'] for x in parameters]
+    columns = set([x['group'] for x in parameters])
     SA_results = pd.DataFrame(np.ma.getdata(SA_result_data), columns=columns, index=years).T
 
     # Save figure results
     title = Path(save_file).stem.capitalize()
-    height = len(columns) + 1.5
+    height = len(columns) / 2 + 1.5
     width = len(years) / 5
     fig, ax = plt.subplots(figsize=(width, height))
     sns.heatmap(SA_results, cmap="coolwarm", ax=ax).set_title(title)
+    ax.set_yticklabels(ax.get_yticklabels(), rotation = 0, fontsize = 8)
     fig.savefig(f'{save_file}.png', bbox_inches='tight')
 
 if __name__ == "__main__":
