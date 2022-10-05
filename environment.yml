@@ -2,11 +2,19 @@ name: binder_snakemake
 channels:
   - conda-forge
   - bioconda
+  - defaults
 dependencies:
   - mamba
   - python>=3
   - snakemake-minimal
   - graphviz
   - pandas
-  - SALib
   - matplotlib
+  - numpy
+  - glpk
+  - coincbc
+  # - seaborn
+  - pyyaml
+  - pip:
+    - SALib>=1.4.0b0
+    - otoole==0.11.0
