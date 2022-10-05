@@ -11,6 +11,7 @@ dependencies:
   - matplotlib
   - numpy
   - pandas
+  - pip
   - python>=3
   - pyyaml
   - snakemake-minimal
