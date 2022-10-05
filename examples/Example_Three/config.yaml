@@ -19,7 +19,7 @@ model_file: examples/Example_Three/osemosys.txt
 solver: cbc
 
 # Sampling - how large should the sample be?
-replicates: 10
+replicates: 5
 
 # For large models, zip lp file and solution (True/False)
 zip: False
