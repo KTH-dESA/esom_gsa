@@ -4,17 +4,16 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - mamba
-  - python>=3
-  - snakemake-minimal
+  - coincbc
+  - glpk
   - graphviz
-  - pandas
+  - mamba
   - matplotlib
   - numpy
-  - glpk
-  - coincbc
-  # - seaborn
+  - pandas
+  - python>=3
   - pyyaml
+  - snakemake-minimal
   - pip:
     - SALib>=1.4.0b0
     - otoole==0.11.0
