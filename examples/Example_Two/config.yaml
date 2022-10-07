@@ -1,0 +1,25 @@
+# Populate the scenarios.csv file with a list of scenario names
+# and path (description optional) to the model datapackage
+datapackage: examples/Example_Two/scenarios.csv
+
+# Tell the workflow which model results to plot
+result_params: examples/Example_Two/results.csv
+agg_results: examples/Example_Two/agg_results.csv
+
+# Filetype options: 'csv' or 'parquet' or 'feather'
+filetype: csv
+
+# Define the uncertain parameters used to define the Monte Carlo sample
+parameters: examples/Example_Two/parameters.csv
+
+# Path to the OSeMOSYS model file
+model_file: examples/Example_Two/osemosys.txt
+
+# Choose a solver, choices: 'cbc' or 'gurobi' or 'cplex'
+solver: cbc
+
+# Sampling - how large should the sample be?
+replicates: 5
+
+# For large models, zip lp file and solution (True/False)
+zip: False

@@ -21,6 +21,7 @@ temp
 *.lp
 *.sol
 dag.png
+examples/*/*.txt
 
 # Vagrant
 .vagrant
