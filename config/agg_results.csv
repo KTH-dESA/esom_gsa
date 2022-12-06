@@ -1,5 +1,0 @@
-resultfile,indices,filename
-TotalCapacityAnnual,"REGION",annual_capacity
-AnnualEmissions,"REGION",emissions
-Demand,"REGION",annual_demand
-ProductionByTechnology,"REGION",annual_generation

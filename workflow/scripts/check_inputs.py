@@ -14,10 +14,12 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Union, Any
 from otoole.read_strategies import ReadDatapackage
+from otoole.utils import _read_file
 import csv
 import pandas as pd
 import yaml
 import math
+import os
 
 from logging import getLogger
 
@@ -37,11 +39,15 @@ def check_datapackage(scenario : int, path: str):
     ------
     FileNotFoundError
         If datapackage does not exist
+    ValueError
+        If datapackage is not a .json
+
     """
     if not Path(path).is_file():
         raise FileNotFoundError(
             f"Datapackage {path} does not exist for scenario {scenario}."
         )
+    check_file_extension(path, 'json')
 
 def check_scenario_file(path : str): 
     """Checks the validity of the scenario file.
@@ -62,17 +68,19 @@ def check_scenario_file(path : str):
         If scenario name is not an int
     """
 
+    expected_headings = ['name','description','datapackage','config']
+
     if not Path(path).is_file():
         raise FileNotFoundError(
             f"Scenario file {path} does not exist. Create the file "
-            "'resources/scenarios.csv' with the headings ['name','description','path']"
+            f"'resources/scenarios.csv' with the headings {expected_headings}"
         )
 
     df = pd.read_csv(path)
-    if list(df) != ['name','description','path']:
+    if list(df) != expected_headings:
         raise ValueError(
             f"Scenario file {path} not formatted correctly. Expected the "
-            f"headings ['name','description','path']. Recieved headings {list(df)}"
+            f"headings {expected_headings}. Recieved headings {list(df)}"
         )
 
     if df.empty:
@@ -81,11 +89,14 @@ def check_scenario_file(path : str):
     for name in df['name']:
         if not type(name) is int:
             raise TypeError(
-                f"All scenario names must be of type int. Scenario {name} is not an int"
+                f"All scenario names must be of type int. Scenario {name} is "
+                f"not an int"
             )
 
-    for name, datapackage in zip(df['name'], df['path']):
+    for name, datapackage in zip(df['name'], df['datapackage']):
         check_datapackage(name, datapackage)
+
+    
 
 def check_model_file(path: str):
     """Checks for existance of model file. 
@@ -358,7 +369,8 @@ def check_parameter_data(
 
 def check_parameters(
     datapackage : str, 
-    parameters: List[Dict[str, Union[str, int, float]]]
+    parameters : List[Dict[str, Union[str, int, float]]], 
+    user_config : Dict
 ): 
     """Checks parameter file. 
 
@@ -368,6 +380,7 @@ def check_parameters(
         path to master datapackage
     parameters: List[Dict[str, Union[str, int, float]]]
         Flattened parameter file 
+    user_config : 
     
     Raises
     ------
@@ -396,14 +409,12 @@ def check_parameters(
         )
 
     # get model parameter definitions 
-    reader = ReadDatapackage()
-    model_params, _ = reader.read(datapackage)
-    model_config = reader.input_config
+    model_params, _ = ReadDatapackage(user_config=user_config).read(datapackage)
 
     for parameter in parameters:
-        check_parameter_data(parameter, model_config)
+        check_parameter_data(parameter, user_config)
         check_parameter_interpolation_data(parameter)
-        check_parameter_index_data(parameter, model_config, model_params)
+        check_parameter_index_data(parameter, user_config, model_params)
 
 def read_parameters_file(path : str) -> List[Dict[str, Union[str, int, float]]]:
     """Reads in a flattened CSV file
@@ -413,15 +424,72 @@ def read_parameters_file(path : str) -> List[Dict[str, Union[str, int, float]]]:
     path : str
         file path to parameters.csv
 
-    Returns:
+    Returns
     --------
     parameters : List[Dict[str, Union[str, int, float]]]
         Flattened parameters file
-    
     """
     with open(path, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
     return parameters
+
+def check_file_extension(file_name : str, extension : str):
+    """Checks the file for the correct extension.
+
+    Parameters
+    ----------
+    file_name : str
+        Name of file
+    extension : str
+        Expected file extension
+
+    Rasies
+    ------
+    ValueError
+        If the actual file extension is not the expected. 
+    """
+    _, ending = os.path.splitext(file_name)
+    if not extension.startswith('.'):
+        extension = f".{extension}"
+    if ending != extension:
+        raise ValueError(
+            f"Input configuration file must be a {extension} file. Recieved the" 
+            f"file {file_name} with the extension {ending}"
+        )
+
+def check_otoole_inputs(
+    actual_data : str, 
+    scenario : int,
+    expected_data : str = 'otoole_files.csv',
+):
+    """Checks that scenario data matches what snakemake will expect
+    
+    This is a useful sanity check on the otoole version you are using. 
+
+    Parameters
+    ----------
+    input_data : str
+        path the directory holding otoole csv data
+    expected_data : str = 'otoole_files.csv'
+        name of the file in /resources holding input CSV data
+    scenario : int
+        scenario number
+
+    Raises
+    ------
+    FileNotFoundError
+        If the input csvs do not match the csvs in resources/otoole_files.csv
+    """
+    missing_files = []
+    expected_files = pd.read_csv(Path('resources', expected_data))['inputs'].to_list()
+    for csv in Path(actual_data).iterdir():
+        if csv.stem not in expected_files:
+            missing_files.append(f"{csv.stem}.csv")
+    if missing_files:
+        raise FileNotFoundError(
+            f"The following CSV files are missing in the input data for scenario "
+            f"{scenario} : {missing_files}"
+        )
 
 def main(config : Dict[str, Any]):
     """Runs a series of checks on input data. 
@@ -430,6 +498,11 @@ def main(config : Dict[str, Any]):
     ----------
     config : Dict[str, Any]
         Parsed config.yaml file
+
+    Rasies
+    ------
+    ValueError
+        If the input config file is not a yaml file
     """
 
     # check config file
@@ -438,11 +511,22 @@ def main(config : Dict[str, Any]):
     check_solver(config['solver'])
     check_replicates(config['replicates'])
 
-    # check parameter file 
-    datapackages = pd.read_csv(config['datapackage'])['path'].to_list()
+    # read in datapackage path and user_config file
+    scenario_df = pd.read_csv(config['datapackage'])
+    scenarios = scenario_df['name'].to_list()
+    datapackages = scenario_df['datapackage'].to_list()
+    configs = scenario_df['config'].to_list()
     parameters = read_parameters_file(config['parameters'])
-    check_parameters(datapackages[0], parameters)
+    with open(configs[0], "r") as f:
+        user_config = _read_file(f, ".yaml")
+    
+    # check parameter file 
+    check_parameters(datapackages[0], parameters, user_config)
 
+    # check otoole inputs 
+    for scenario, datapackage in zip(scenarios, datapackages):
+        data_dir = Path(Path(datapackage).parent, 'data')
+        check_otoole_inputs(str(data_dir), scenario)
 
 if __name__ == "__main__":
 
@@ -456,4 +540,5 @@ if __name__ == "__main__":
                 parsed_yaml = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+                raise exc
         main(parsed_yaml)

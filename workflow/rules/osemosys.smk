@@ -13,26 +13,52 @@ def solver_output(wildcards):
         return rules.unzip_solution.output
 
 def datapackage_from_scenario(wildcards):
-    return SCENARIOS.loc[int(wildcards.scenario), 'path']
+    return SCENARIOS.loc[int(wildcards.scenario), 'datapackage']
 
-rule copy_datapackage:
-    message: "Copying and modifying datapackage for '{output.folder}'"
+def config_from_scenario(wildcards):
+    return SCENARIOS.loc[int(wildcards.scenario), 'config']
+
+rule create_model_data:
+    message: "Copying and modifying data for '{params.folder}'"
     input:
         datapackage=datapackage_from_scenario,
-        sample="modelruns/{scenario}/model_{model_run}/sample_{model_run}.txt"
+        sample="modelruns/{scenario}/model_{model_run}/sample_{model_run}.txt",
+        config=config_from_scenario
     log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
+    params:
+        folder=directory("results/{scenario}/model_{model_run}")
     conda: "../envs/otoole.yaml"
     group: "gen_lp"
     output:
-        folder=directory("results/{scenario}/model_{model_run}"),
-        datapackage="results/{scenario}/model_{model_run}/datapackage.json",
+        csv=expand("results/{{scenario}}/model_{{model_run}}/data/{csv}.csv", csv=INPUT_FILES)
     shell:
-        "python workflow/scripts/create_modelrun.py {input.datapackage} {output.folder} {input.sample}"
+        "python workflow/scripts/create_modelrun.py {input.datapackage} {params.folder}/data {input.sample} {input.config}"
+
+rule copy_datapackage:
+    message: "Copying datapackage for '{params.folder}'"
+    input:
+        json=datapackage_from_scenario,
+        yaml=config_from_scenario,
+        csvs=rules.create_model_data.output,
+    log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
+    params:
+        folder="results/{scenario}/model_{model_run}",
+    output:
+        json="results/{scenario}/model_{model_run}/datapackage.json",
+        yaml="results/{scenario}/model_{model_run}/config.yaml",
+    log:
+        "results/log/copy_datapackage_{scenario}_{model_run}.log"
+    shell:
+        """
+        cp {input.json} {output.json}
+        cp {input.yaml} {output.yaml}
+        """
 
 rule generate_datafile:
     message: "Generating datafile for '{output}'"
     input:
-        datapackage="results/{scenario}/model_{model_run}/datapackage.json"
+        datapackage="results/{scenario}/model_{model_run}/datapackage.json",
+        config="results/{scenario}/model_{model_run}/config.yaml"
     output:
         temp("temp/{scenario}/model_{model_run}.txt")
     conda: "../envs/otoole.yaml"
@@ -40,7 +66,7 @@ rule generate_datafile:
     log:
         "results/log/otoole_{scenario}_{model_run}.log"
     shell:
-        "otoole -v convert datapackage datafile {input} {output} 2> {log}"
+        "otoole -v convert datapackage datafile {input.datapackage} {output} {input.config} 2> {log}"
 
 rule modify_model_file:
     message: "Adding MODEX sets to model file"
@@ -167,15 +193,18 @@ rule process_solution:
     group: 'results'
     input:
         solution=solver_output,
-        data="results/{scenario}/model_{model_run}/datapackage.json"
-    output: ["results/{{scenario}}/model_{{model_run}}/results/{}.csv".format(x) for x in RESULTS.index]
+        datapackage="results/{scenario}/model_{model_run}/datapackage.json",
+        config="results/{scenario}/model_{model_run}/config.yaml",
+    output: 
+        expand("results/{{scenario}}/model_{{model_run}}/results/{csv}.csv", csv=OUTPUT_FILES)
     conda: "../envs/otoole.yaml"
     log: "results/log/process_solution_{scenario}_{model_run}.log"
     params:
         folder="results/{scenario}/model_{model_run}/results"
-    shell: """
+    shell: 
+        """
         mkdir -p {params.folder}
-        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.data} &> {log}
+        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.datapackage} {input.config} &> {log}
         """
 
 rule get_statistics:

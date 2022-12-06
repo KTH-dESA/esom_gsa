@@ -1,1 +1,5 @@
 name,group,indexes,min_value_base_year,max_value_base_year,min_value_end_year,max_value_end_year,dist,interpolation_index,action
+CapitalCost,capital,"R1,RENEWABLE",4500,5500,2000,3000,"unif","YEAR","interpolate"
+VariableCost,variable,"R1,MINE_RENEWABLE,1",1,2,0.75,1,"unif","YEAR","interpolate"
+InputActivityRatio,efficiency,"R1,RENEWABLE,RENEWABLE_FUEL,1",2.5,3.0,1.5,2,"unif","YEAR","interpolate"
+OperationalLife,oplife,"R1,RENEWABLE",50,100,50,100,"unif","","fixed"

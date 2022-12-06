@@ -1,6 +1,8 @@
 import os
 import pandas as pd
-from typing import List
+from typing import List, Dict
+import yaml
+from pathlib import Path
 
 from logging import getLogger
 
@@ -19,17 +21,26 @@ def get_model_run_scenario_from_input_filepath(filename: str):
     return {'model_run': model_run, 'scenario': scenario,
             'param': param, 'filepath': filepath}
 
-def get_model_run_scenario_from_filepath(filename: str):
-    """Parses filepath to extract useful bits
+def get_model_run_scenario_from_filepath(filepath: str) -> Dict:
+    """Parses filepath to extract useful bits.
 
-    "results/{{scenario}}/{modelrun}/{input_file}.csv"
+    Input filepath is expected in the form of:
+        "results/{scenario}/{modelrun}/results/{input_file}.csv"
+
+    Parameters
+    ----------
+    file : str
+        file path from root directory 
+
+    Returns
+    -------
+    Dict
+        With model_run, scenario, OSeMOSYS parameter, and filepath directory
     """
-    filepath, name = os.path.split(filename)
-    param = os.path.splitext(name)[0]
-    scenario_path, model_run = os.path.split(filepath)
-    scenario = os.path.split(scenario_path)[1]
-    return {'model_run': model_run, 'scenario': scenario,
-            'param': param, 'filepath': filepath}
+    f = Path(filepath)
+    parts = f.parts
+    return {'model_run': parts[2], 'scenario': parts[1],
+            'param': f.stem, 'filepath': str(f.parent)}
 
 def read_results(input_filepath: str) -> pd.DataFrame:
     extension = os.path.splitext(input_filepath)[1]
@@ -43,7 +54,7 @@ def read_results(input_filepath: str) -> pd.DataFrame:
 
 
 def write_results(df: pd.DataFrame, output_filepath: str, index=None) -> None:
-    """Write out aggregated results to disk
+    """Write out aggregated results to disk by scenario 
 
     Arguments
     ---------
@@ -65,7 +76,7 @@ def write_results(df: pd.DataFrame, output_filepath: str, index=None) -> None:
         df.to_feather(output_filepath)
 
 def create_salib_problem(parameters: List) -> dict:
-    """Creates SALib problem from scenario configuration file.
+    """Creates SALib problem from scenario configuration.
     
     Arguments
     ---------
@@ -88,8 +99,9 @@ def create_salib_problem(parameters: List) -> dict:
     problem = {}
     problem['num_vars'] = len(parameters)
     if problem['num_vars'] <= 1:
-        logger.error(f"Must define at least two variables in problem. User defined {problem['num_vars']} variable(s).")
-        raise ValueError
+        raise ValueError(
+            f"Must define at least two variables in problem. User defined "
+            f"{problem['num_vars']} variable(s).")
 
     names = []
     bounds = []
@@ -106,7 +118,33 @@ def create_salib_problem(parameters: List) -> dict:
     problem['groups'] = groups
     num_groups = len(set(groups))
     if num_groups <= 1:
-        logger.error(f"Must define at least two groups in problem. User defined {num_groups} group(s).")
-        raise ValueError
+        raise ValueError(
+            f"Must define at least two groups in problem. User defined "
+            f"{num_groups} group(s).")
 
     return problem
+
+def parse_yaml(path : str) -> Dict:
+    """Parses a YAML file to a dictionary
+
+    Parameters
+    ----------
+    path : str
+        input path the yaml file 
+
+    Returns
+    -------
+    parsed_yaml : Dict
+        parsed YAML file
+
+    Raises
+    ------
+    YAMLError
+        If the yaml file can't be loaded 
+    """
+    with open(path, 'r') as stream:
+        try:
+            parsed_yaml = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
+        return parsed_yaml
