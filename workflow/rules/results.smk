@@ -73,6 +73,18 @@ rule create_heatmap:
         results=expand("results/{{scenario}}/{{result_file}}.{ext}", ext=config['filetype'])
     output:
         "results/{scenario}_summary/{result_file}_heatmap.png"
-    shell: "python workflow/scripts/create_heatmap.py {params.parameters} {input.sample} {input.results} {output}"
+    shell: 
+        "python workflow/scripts/create_heatmap.py {params.parameters} {input.sample} {input.results} {output}"
 
-    
+rule plot_interactions:
+    message:
+        "Creating interaction plots"
+    params:
+        parameters=config['parameters']
+    input:
+        sample = "modelruns/{scenario}/morris_sample.txt",
+        results = "results/{scenario}/objective_{scenario}.csv"
+    output:
+        "results/{scenario}_summary/SA_interactions.png"
+    shell:
+        "python workflow/scripts/plot_interactions.py {params.parameters} {input.sample} {input.results} {output}"
