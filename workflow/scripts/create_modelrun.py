@@ -304,7 +304,7 @@ def main(
         model_params[name] = parameter
     model_params = modify_parameters(model_params, parameters, user_config)
     # WriteDatapackage(user_config=user_config).write(model_params, output_filepath, default_values)
-    WriteCsv(user_config=user_config, ).write(model_params, output_filepath, default_values)
+    WriteCsv(user_config=user_config).write(model_params, output_filepath, default_values)
 
 
 if __name__ == "__main__":

@@ -97,5 +97,8 @@ if __name__ == '__main__':
         output_file = Path(sys.argv[3]).stem
         indices = get_indices(parameters, output_file)
 
+    if 'YEAR' in indices:
+        indices['YEAR'] = [float(x) for x in indices['YEAR']]
+
     user_config = parse_yaml(yaml_config)
     main(input_files, output_file_path, indices, user_config)
