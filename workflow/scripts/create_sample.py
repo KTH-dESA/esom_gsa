@@ -40,7 +40,7 @@ def main(parameters: dict, sample_file: str, replicates: int):
 
     problem = utils.create_salib_problem(parameters)
 
-    sample = morris.sample(problem, N=50, optimal_trajectories=replicates,
+    sample = morris.sample(problem, N=100, optimal_trajectories=replicates,
                            local_optimization=True, seed=42)
 
     np.savetxt(sample_file, sample, delimiter=',')
