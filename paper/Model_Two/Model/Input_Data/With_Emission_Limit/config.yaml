@@ -249,6 +249,7 @@ TotalAnnualMaxCapacity:
     dtype: float
     default: -1
 TotalAnnualMaxCapacityInvestment:
+    short_name: TotalAnnualMaxCapacityInvestmen
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
@@ -259,26 +260,31 @@ TotalAnnualMinCapacity:
     dtype: float
     default: 0
 TotalAnnualMinCapacityInvestment:
+    short_name: TotalAnnualMinCapacityInvestmen
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
     default: 0
 TotalTechnologyAnnualActivityLowerLimit:
+    short_name: TotalTechnologyAnnualActivityLo
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
     default: 0
 TotalTechnologyAnnualActivityUpperLimit:
+    short_name: TotalTechnologyAnnualActivityUp
     indices: [REGION,TECHNOLOGY,YEAR]
     type: param
     dtype: float
     default: -1
 TotalTechnologyModelPeriodActivityLowerLimit:
+    short_name: TotalTechnologyModelPeriodActLo
     indices: [REGION,TECHNOLOGY]
     type: param
     dtype: float
     default: 0
 TotalTechnologyModelPeriodActivityUpperLimit:
+    short_name: TotalTechnologyModelPeriodActUp
     indices: [REGION,TECHNOLOGY]
     type: param
     dtype: float
@@ -356,6 +362,7 @@ DiscountedSalvageValue:
     default: 0
     calculated: False
 DiscountedTechnologyEmissionsPenalty:
+    short_name: DiscountedTechEmissionsPenalty
     indices: [REGION, TECHNOLOGY, YEAR]
     type: result
     dtype: float
@@ -404,6 +411,7 @@ RateOfProductionByTechnology:
     default: 0
     calculated: True
 RateOfProductionByTechnologyByMode:
+    short_name: RateOfProductionByTechByMode
     indices: [REGION, TIMESLICE, TECHNOLOGY, MODE_OF_OPERATION, FUEL, YEAR]
     type: result
     dtype: float
@@ -464,6 +472,7 @@ StorageLevelYearFinish:
     default: 0
     calculated: False
 TotalAnnualTechnologyActivityByMode:
+    short_name: TotalAnnualTechActivityByMode
     indices: [REGION, TECHNOLOGY, MODE_OF_OPERATION, YEAR]
     type: result
     dtype: float
@@ -488,6 +497,7 @@ TotalTechnologyAnnualActivity:
     default: 0
     calculated: True
 TotalTechnologyModelPeriodActivity:
+    short_name: TotalTechModelPeriodActivity
     indices: [REGION, TECHNOLOGY]
     type: result
     dtype: float
