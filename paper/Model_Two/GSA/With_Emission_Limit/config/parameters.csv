@@ -1,0 +1,11 @@
+name,group,indexes,min_value_base_year,max_value_base_year,min_value_end_year,max_value_end_year,dist,interpolation_index,action
+CapitalCost,Capital_Hydro,"R1,HYDRO",4500,5500,2000,3000,"unif","YEAR","interpolate"
+CapitalCost,Capital_Fossil,"R1,FOSSIL",750,1250,500,1000,"unif","YEAR","interpolate"
+FixedCost,Fixed_Hydro,"R1,HYDRO",30,60,30,60,"unif","YEAR","fixed"
+FixedCost,Fixed_Fossil,"R1,FOSSIL",30,60,30,60,"unif","YEAR","fixed"
+VariableCost,Variable_Fossil,"R1,MINE_FOSSIL,1",1,2,0.5,3,"unif","YEAR","interpolate"
+InputActivityRatio,Efficiency_Fossil,"R1,FOSSIL,FOSSIL_FUEL,1",2.5,3.5,2.0,2.5,"unif","YEAR","interpolate"
+OperationalLife,OpLife_Hydro,"R1,HYDRO",50,100,50,100,"unif","","fixed"
+OperationalLife,OpLife_Fossil,"R1,FOSSIL",30,60,20,50,"unif","","fixed"
+SpecifiedAnnualDemand,Demand,"R1,ELC_02",18120,18120,37228,55842,"unif","YEAR","interpolate"
+ModelPeriodEmissionLimit,EmissionLimit,"R1,CO2",7500,15000,7500,15000,"unif","","fixed"

@@ -1,0 +1,4 @@
+name,group,indexes,min_value_base_year,max_value_base_year,min_value_end_year,max_value_end_year,dist,interpolation_index,action
+CapitalCost,capital,"R1,HYDRO",4500,5500,2000,3000,"unif","YEAR","interpolate"
+FixedCost,fixed,"R1,HYDRO",30,60,30,60,"unif","YEAR","fixed"
+SpecifiedAnnualDemand,demand,"R1,ELC_02",18120,18120,37228,55842,"unif","YEAR","interpolate"

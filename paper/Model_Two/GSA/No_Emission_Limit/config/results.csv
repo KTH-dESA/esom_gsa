@@ -1,0 +1,3 @@
+resultfile,filename,REGION,TECHNOLOGY,FUEL,EMISSION
+NewCapacity,NewCapacityHydro,"R1","HYDRO",,,
+NewCapacity,NewCapacityFossil,"R1","FOSSIL",,,

@@ -1,3 +1,4 @@
+
 import json
 
 wildcard_constraints:
@@ -204,7 +205,7 @@ rule process_solution:
     shell: 
         """
         mkdir -p {params.folder}
-        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.datapackage} {input.config} &> {log}
+        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.datapackage} {input.config} --write_default&> {log}
         """
 
 rule get_statistics:

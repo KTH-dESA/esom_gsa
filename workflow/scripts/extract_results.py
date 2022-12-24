@@ -61,7 +61,8 @@ def main(input_files: List, output_file: str, indices: Tuple, config: Dict):
                 results = df.xs(param, level=index, drop_level=False)
                 result_dfs.append(results)
             except KeyError as ex:
-                raise ex
+                print(f'No values for {param} in {filename}')
+                raise KeyError(ex)
         results = pd.concat(result_dfs)
         results = results.reset_index(level='YEAR')
         ################################################################

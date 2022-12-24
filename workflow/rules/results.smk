@@ -9,6 +9,7 @@ def get_input(wildcards):
 def get_indices(wildcards):
     indices = RESULTS.set_index('filename').loc[wildcards.result_file].dropna().drop('resultfile').to_dict()
     return {x:str(indices[x]).split(',') for x in indices}
+    
 
 rule extract_results:
     input: 

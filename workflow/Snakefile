@@ -13,7 +13,7 @@ SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
 GROUPS = pd.read_csv(config['parameters'])['group'].unique()
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
-RESULTS = pd.read_csv(config["results"])
+RESULTS = pd.read_csv(config["results"], index_col=False)
 RESULT_FILES = RESULTS['filename'].to_list()
 ZIP = '.gz' if config['zip'] else ''
 INPUT_FILES = pd.read_csv('resources/otoole_files.csv')['inputs'].to_list()
@@ -39,9 +39,9 @@ rule all:
     input:
         expand("results/{scenario}_summary/SA_objective.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png']),
         expand("results/{scenario}_summary/SA_{result_file}.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png'], result_file=RESULT_FILES),
-        expand("results/{scenario}_summary/SA_interactions.png", scenario=SCENARIOS.index),
+        # expand("results/{scenario}_summary/SA_interactions.png", scenario=SCENARIOS.index),
         expand("results/{scenario}/model_{model_run}/results/{x}.csv", x=OUTPUT_FILES, model_run=MODELRUNS, scenario=SCENARIOS.index),
-        expand("results/{scenario}_summary/{result_file}_heatmap.png", scenario=SCENARIOS.index, result_file=RESULT_FILES),
+        # expand("results/{scenario}_summary/{result_file}_heatmap.png", scenario=SCENARIOS.index, result_file=RESULT_FILES),
                
     message: "Running pipeline to generate the sensitivity analysis results"
 
