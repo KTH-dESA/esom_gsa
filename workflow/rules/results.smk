@@ -1,7 +1,4 @@
 def get_input(wildcards):
-    # input_file = RESULTS.set_index('filename').loc[wildcards.result_file]['resultfile']
-    # return ["results/{scenario}/model_{modelrun}/results/{input_file}.csv".format(
-    #     modelrun=x, input_file=input_file, scenario=y) for x in MODELRUNS for y in SCENARIOS.index]
     input_file = RESULTS.set_index('filename').loc[wildcards.result_file]['resultfile']
     return ["results/{wildcards.scenario}/model_{modelrun}/results/{input_file}.csv".format(
         modelrun=x, input_file=input_file, wildcards=wildcards) for x in MODELRUNS]
@@ -9,13 +6,11 @@ def get_input(wildcards):
 def get_indices(wildcards):
     indices = RESULTS.set_index('filename').loc[wildcards.result_file].dropna().drop('resultfile').to_dict()
     return {x:str(indices[x]).split(',') for x in indices}
-    
 
 rule extract_results:
     input: 
         csvs=get_input,
         config=config_from_scenario,
-        # csvs=expand("results/{{scenario}}/model_{{model_run}}/results/{csv}.csv", csv=OUTPUT_FILES)
     params:
         parameter = get_indices,
         folder=directory("results/{{scenario}}_summary/")

@@ -200,6 +200,7 @@ def check_parameter_index_data(
     config_indices = datapackage[param['name']]['indices'].copy()
     param_index = param['indexes'].split(',')
     param_interp_index = param['interpolation_index']
+    param_interp_action = param['action']
 
     # While this will only search one of the scenarios data, all parameters that 
     # you are performing SA on must be in all the scenarios
@@ -218,12 +219,15 @@ def check_parameter_index_data(
             )
 
     if len(config_indices) != len(param_index):
-        raise ValueError(
-            f"The indices provided for {param['name']} of {param_index} do "
-            f"not correspond to the following indices specified in the "
-            f"datapackge: {config_indices}"
-        )
-
+        if not ((param_interp_action == "fixed") and ("YEAR" in config_indices)):
+            raise ValueError(
+                f"The indices provided for {param['name']} of {param_index} do "
+                f"not correspond to the following indices specified in the "
+                f"datapackge: {config_indices}"
+            )
+        else:
+            config_indices.remove("YEAR")
+    
     for num, index in enumerate(config_indices):
         param_data = param_index[num]
         if not param_data in set_data[index]:

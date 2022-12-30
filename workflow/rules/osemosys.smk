@@ -208,6 +208,17 @@ rule process_solution:
         otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.datapackage} {input.config} --write_default&> {log}
         """
 
+rule re_share_results:
+    input: 
+        "results/{scenario}/model_{model_run}/results/ProductionByTechnologyAnnual.csv"
+    output:
+        "results/{scenario}/model_{model_run}/results/ReShare.csv"
+    params: 
+        folder = 'results/{scenario}/model_{model_run}/results'
+    shell: 
+        "python workflow/scripts/calculate_re_share.py {params.folder} {params.folder}"
+
+
 rule get_statistics:
     message: "Extract the {config[solver]} statistics from the sol file"
     input: rules.solve_lp.output.solution
