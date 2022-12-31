@@ -1,0 +1,19 @@
+# Versioned requirments to generate results
+
+# python packages
+pandas=1.5.2
+numpy=1.23.4
+salib=1.4.6.1
+matplotlib=3.4.3
+yaml=0.2.5
+snakemake=7.19.1
+
+# otoole
+git+https://github.com/OSeMOSYS/otoole.git@c4ea4ddcf5262ba94ee08a6680391cf30aee5546
+
+# osemosys global
+git+https://github.com/OSeMOSYS/osemosys_global.git@7eb038d579882be77dc4d30a79a4d1249944daf0
+
+# external tools
+glpk=v4.65
+cbc=2.10.5
