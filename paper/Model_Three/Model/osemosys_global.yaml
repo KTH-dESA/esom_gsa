@@ -1,0 +1,43 @@
+# Scenario Name 
+scenario: 'Nepal'
+
+# Temporal Parameters 
+startYear: 2020
+endYear: 2070
+daytype: False
+dayparts:
+  #daypart : [start_hour (inclusive), end_hour (exclusive)]
+  D1: [0, 12]
+  D2: [12, 24]
+seasons:
+  #season : [month 1, month 2, ...] (all inclusive)
+  S1: [12, 1, 2]
+  S2: [3, 4, 5]
+  S3: [6, 7, 8]
+  S4: [9, 10, 11]
+timeshift: 5 # value between -11 and 12
+  
+# Spatial Parameters 
+geographic_scope:
+    - 'NPL'
+crossborderTrade: True
+
+# Emission Parameters 
+emission_penalty: 20 # M$/MT CO2
+
+# Investment Parameters 
+no_invest_technologies: 
+  - 'GEO'
+  - 'CSP'
+  - 'WAV'
+  - 'BIO'
+  - 'OTH'
+
+# Result Parameters 
+results_by_country: True
+
+# solver parameters
+solver: 'cbc' # cbc, cplex, gurobi
+
+user_defined_capacity:
+  # technology: [capacity, first_year,]

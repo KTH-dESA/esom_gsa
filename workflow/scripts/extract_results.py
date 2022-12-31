@@ -40,6 +40,15 @@ def main(input_files: List, output_file: str, indices: Tuple, config: Dict):
     config : Dict
         Datapackage holding type information 
     """
+
+    # Not an otoole standard result 
+    config['ReShare'] = {
+        "indices": ["REGION","YEAR"],
+        "type": "result",
+        "dtype": "float",
+        "default": 0
+    }
+
     aggregated_results = []
     for filename in input_files:
 
