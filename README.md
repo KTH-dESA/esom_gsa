@@ -2,6 +2,21 @@
 
 The snakemake workflow to conduct a global sensitivity analysis for an OSeMOSYS Model
 
+## Paper
+
+This repository is used in [the paper](https://doi.org/10.12688/openreseurope.15461.1) currently under review at Open Research Europe.
+
+@article{10.12688/openreseurope.15461.1,
+	author = {Usher, W and Barnes, T and Moksnes, N and Niet, T},
+	doi = {10.12688/openreseurope.15461.1},
+	journal = {Open Research Europe},
+	number = {30},
+	title = {Global sensitivity analysis to enhance the transparency and rigour of energy system optimisation modelling [version 1; peer review: awaiting peer review]},
+	volume = {3},
+	year = {2023},
+	Bdsk-Url-1 = {https://doi.org/10.12688/openreseurope.15461.1}}
+
+
 ## Getting Started
 
 ### Follow the tutorial
@@ -35,7 +50,7 @@ pip install -r requirements.txt
 
 ### Configuration File: `config.yaml`
 
-The file `config/config.yaml` holds workflow configuration options. These options include the location of the model and accompanying data, solver, and sensitivity analysis parameters. Details on how to modify all configuration parameters are located in the `config.yaml` file. 
+The file `config/config.yaml` holds workflow configuration options. These options include the location of the model and accompanying data, solver, and sensitivity analysis parameters. Details on how to modify all configuration parameters are located in the `config.yaml` file.
 
 Datapackage and model file paths can  point to the repositories outside of the gui_workflow. So deployment to an HPC will involve:
 
@@ -72,19 +87,19 @@ DiscountRate,discountrate,"GLOBAL",0.04,0.05,0.15,0.20,unif,None,fixed
 
 ### Results file `results.csv`
 
-The file `config/results.csv` holds information on what variables to run the sensitivity analysis over. The information required is summarized below. If a custom OSeMOSYS model is provided with new sets, the additional set can be added as a new column. 
+The file `config/results.csv` holds information on what variables to run the sensitivity analysis over. The information required is summarized below. If a custom OSeMOSYS model is provided with new sets, the additional set can be added as a new column.
 
 column_name | description
 :-- | :--
-resultfile | Name of OSeMOSYS Result file 
-filename | Name of file to write results to 
-REGION | Model region 
-TECHNOLOGY | Model technology  
-FUEL | Model fuel 
-EMISSION | Model emission  
+resultfile | Name of OSeMOSYS Result file
+filename | Name of file to write results to
+REGION | Model region
+TECHNOLOGY | Model technology
+FUEL | Model fuel
+EMISSION | Model emission
 YEAR | Model year
 
-An example of a correctly formatted CSV file is shown below. Note that if no index value is provided, the results will sum over all items in that set. For example, for the `AnnualEmissions` results, the sensitivity analysis will be run on the sum of all annual CO2 emissions in the region `SIMPLICITY` over the model horizon.  
+An example of a correctly formatted CSV file is shown below. Note that if no index value is provided, the results will sum over all items in that set. For example, for the `AnnualEmissions` results, the sensitivity analysis will be run on the sum of all annual CO2 emissions in the region `SIMPLICITY` over the model horizon.
 
 ```csv
 resultfile,filename,REGION,TECHNOLOGY,FUEL,EMISSION,YEAR
@@ -97,18 +112,18 @@ TotalCapacityAnnual,TotalCapacityAnnualCCNGLastYear,"R1","CCNG",,,2070
 
 ### Scenarios file `scenarios.csv`
 
-The file `config/scenarios.csv` is used to point the workflow to master models. Use each master models to define macro scenarios - e.g. forcing in and out a key technology. 
+The file `config/scenarios.csv` is used to point the workflow to master models. Use each master models to define macro scenarios - e.g. forcing in and out a key technology.
 
 Importantly, each of the master models is used as a base for the N replicates defined in `config.yaml. If you define 3 master models in this file, and N=100, then 300 model runs will be scheduled, but with the same 100 parameter values.
 
 column_name | description
 :-- | :--
-name | Index of the scenarion 
+name | Index of the scenarion
 description | Description of the scenario
 datapackage | path to otool datapackage
-config | path to otool config file 
+config | path to otool config file
 
-An example of a correctly formatted CSV file is shown below. 
+An example of a correctly formatted CSV file is shown below.
 
 ```csv
 name,description,datapackage, config
