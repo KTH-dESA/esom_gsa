@@ -173,3 +173,11 @@ This repository follows the snakemake guidelines for reproducibility:
     │   └── some-sheet.csv
     ├── results
     └── resources
+
+## Acknowledgements
+
+This research was financially supported by the European Union’s Horizon 2020 research and innovation programme under the grant agreement No [101022622](https://cordis.europa.eu/project/id/101022622) (European Climate and Energy Modelling Forum [ECEMF](https://ecemf.eu)).
+
+The original version of the computational workflow that was extended for this work was developed by Will Usher under the [Climate Compatible Growth programme](https://climatecompatiblegrowth.com/), which is funded by UK aid from the UK government. The views expressed herein do not necessarily reflect the UK government’s official policies.
+
+Trevor Barnes contribution to this paper was funded via a [Mitacs Globalink Research Award IT2569](https://www.mitacs.ca/en/programs/globalink).
