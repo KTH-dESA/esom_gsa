@@ -6,15 +6,15 @@ The snakemake workflow to conduct a global sensitivity analysis for an OSeMOSYS 
 
 This repository is used in [the paper](https://doi.org/10.12688/openreseurope.15461.1) currently under review at Open Research Europe.
 
-@article{10.12688/openreseurope.15461.1,
-	author = {Usher, W and Barnes, T and Moksnes, N and Niet, T},
-	doi = {10.12688/openreseurope.15461.1},
-	journal = {Open Research Europe},
-	number = {30},
-	title = {Global sensitivity analysis to enhance the transparency and rigour of energy system optimisation modelling [version 1; peer review: awaiting peer review]},
-	volume = {3},
-	year = {2023},
-	Bdsk-Url-1 = {https://doi.org/10.12688/openreseurope.15461.1}}
+    @article{10.12688/openreseurope.15461.1,
+        author = {Usher, W and Barnes, T and Moksnes, N and Niet, T},
+        doi = {10.12688/openreseurope.15461.1},
+        journal = {Open Research Europe},
+        number = {30},
+        title = {Global sensitivity analysis to enhance the transparency and rigour of energy system optimisation modelling [version 1; peer review: awaiting peer review]},
+        volume = {3},
+        year = {2023},
+        Bdsk-Url-1 = {https://doi.org/10.12688/openreseurope.15461.1}}
 
 
 ## Getting Started
