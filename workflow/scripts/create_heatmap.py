@@ -84,7 +84,7 @@ def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: 
     """
 
     problem = utils.create_salib_problem(parameters)
-    model_results = model_results.groupby(['MODELRUN','YEAR']).sum()
+    model_results = model_results.groupby(['MODELRUN','YEAR']).sum(numeric_only=True)
 
     years = model_results.index.unique(level='YEAR')
     SA_result_data = []
@@ -95,7 +95,7 @@ def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: 
         SA_result_data.append(Si['mu_star'])
     
     SA_result_data = np.ma.concatenate([SA_result_data])
-    columns = set([x['group'] for x in parameters])
+    columns = list(set([x['group'] for x in parameters]))
     SA_results = pd.DataFrame(np.ma.getdata(SA_result_data), columns=columns, index=years).T
 
     # Save figure results

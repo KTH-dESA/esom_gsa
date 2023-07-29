@@ -38,7 +38,7 @@ def main(input_files: List, output_file: str, indices: Tuple, config: Dict):
         Indices to extract value over 
         ex. {'REGION':['SIMPLICITY], 'TECHNOLOGY':['GAS_EXTRACTION','HYD1']}
     config : Dict
-        Datapackage holding type information 
+        otoole configuration file
     """
     aggregated_results = []
     for filename in input_files:

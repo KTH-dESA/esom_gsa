@@ -11,9 +11,9 @@ dependencies:
   - xlrd
   - pyyaml
   - pydot
-  - datapackage>=1.9,<2
+ # - datapackage>=1.9,<2
   - amply>=0.1.4
   - networkx
   - openpyxl
   - pip:
-    - git+https://github.com/willu47/otoole.git@temba
+    - otoole>=1.0.4

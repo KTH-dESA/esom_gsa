@@ -60,7 +60,7 @@ def parse_user_defined_results(df : pd.DataFrame) -> np.array:
     Y : np.array
         Array of reults per model run in model run order 
     """
-    df = df.groupby(by=['MODELRUN']).sum().reset_index()
+    df = df.groupby(by=['MODELRUN']).sum(numeric_only=True).reset_index()
     df['NUM'] = df['MODELRUN'].map(lambda x: int(x.split('_')[1]))
     df = df.sort_values(by='NUM').reset_index(drop=True).drop(('NUM'), axis=1)
     Y = df['VALUE'].to_numpy()
@@ -137,6 +137,13 @@ if __name__ == "__main__":
             f"Result type must be 'objective' or 'variable'. Supplied value is "
             f"{result_type}"
         )
+        
+    print(sys.argv[4])
+    print(Path(sys.argv[4]).parent)
+    print(Path(sys.argv[4]).parent.is_dir())
+    if not Path(sys.argv[4]).parent.is_dir():
+        new_dir = Path(sys.argv[4]).parent
+        new_dir.mkdir(parents=True)
 
     sa_results(parameters, X, Y, save_file)
     

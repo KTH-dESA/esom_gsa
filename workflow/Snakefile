@@ -1,5 +1,9 @@
 import pandas as pd
 import sys
+from typing import List 
+from yaml import load
+from otoole.utils import UniqueKeyLoader
+
 configfile: "config/config.yaml"
 localrules: all, clean
 wildcard_constraints:
@@ -9,19 +13,49 @@ wildcard_constraints:
 
 container: "docker://condaforge/mambaforge:4.10.1-0"
 
-SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
+SCENARIOS = pd.read_csv(config["scenarios"]).set_index('name')
 GROUPS = pd.read_csv(config['parameters'])['group'].unique()
+
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
 RESULTS = pd.read_csv(config["results"])
 RESULT_FILES = RESULTS['filename'].to_list()
 ZIP = '.gz' if config['zip'] else ''
-INPUT_FILES = pd.read_csv('resources/otoole_files.csv')['inputs'].to_list()
-OUTPUT_FILES = pd.read_csv('resources/otoole_files.csv')['outputs'].dropna().to_list()
+
+# Get list of expected input/output files from otoole config.
+
+# While these are only tied to a single scenario, since the user only supplies
+# one model file, the params and variables can not change between scenarios
+def get_expected_files(config: str, config_type: str) -> List[str]:
+    if config_type not in ["param", "result", "set"]:
+        return TypeError(f"Type must be 'param', 'result', or 'set'. Recieved {config_type}.")
+    with open(config, "r") as f:
+        parsed_config = load(f, Loader=UniqueKeyLoader)
+    return [x for x, y in parsed_config.items() if y["type"] == config_type]
+
+otoole_config_path = SCENARIOS.loc[0, 'config']
+INPUT_FILES = get_expected_files(otoole_config_path, "param")
+OUTPUT_FILES = get_expected_files(otoole_config_path, "result")
+
+# bug in otoole 1.0.4 where these are not being properly calculated 
+files_to_remove = [
+    "CapitalInvestment", 
+    "NewStorageCapacity", 
+    "NumberOfNewTechnologyUnits", 
+    "SalvageValueStorage", 
+    "StorageLevelDayTypeFinish", 
+    "StorageLevelDayTypeStart", 
+    "StorageLevelSeasonStart", 
+    "StorageLevelYearFinish", 
+    "StorageLevelYearStart", 
+    "Trade"
+]
+OUTPUT_FILES = [x for x in OUTPUT_FILES if x not in files_to_remove]
 
 include: "rules/osemosys.smk"
 include: "rules/results.smk"
 
+# needed for running examples via jupyter notebook 
 args = sys.argv
 try:
     config_path = args[args.index("--configfile") + 1]

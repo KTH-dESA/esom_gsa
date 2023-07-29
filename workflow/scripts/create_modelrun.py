@@ -1,9 +1,9 @@
-"""Creates model runs from a sample file and master model datapackage
+"""Creates model runs from a sample file and master model csv directory 
 
 Arguments
 ---------
 <input_filepath>
-    Path to the master model datapackage
+    Path to the master model csv directory 
 <output_filepath>
     Path to the new model file directory
 <sample_filepath>
@@ -29,7 +29,7 @@ from typing import Dict, List, Union, Tuple, Any, Optional
 import csv
 import pandas as pd
 import numpy as np
-from otoole.read_strategies import ReadDatapackage
+from otoole.read_strategies import ReadCsv
 from otoole.write_strategies import WriteCsv
 from otoole.utils import _read_file
 import os
@@ -77,7 +77,7 @@ def get_types_from_tuple(index: list, param: str, config: Dict) -> Tuple:
     param : str
         Name of parameter
     config : Dict
-        Input datapackage
+        Input configuration file 
 
     Returns
     -------
@@ -254,7 +254,7 @@ def modify_parameters(
     parameters : List[Dict[str, Union[str, int, float]]]
         Flattened input parameters for the individual model run
     config : Dict
-        Input datapackage
+        Input configurarion file 
 
     Returns
     -------
@@ -296,14 +296,13 @@ def main(
     parameters: List[Dict[str, Union[str, int, float]]],
     user_config):
 
-    model_params, default_values = ReadDatapackage(user_config=user_config).read(input_filepath)
+    model_params, default_values = ReadCsv(user_config=user_config).read(input_filepath)
 
-    logger.info("Reading datapackage {}".format(input_filepath))
+    logger.info("Reading csv directory {}".format(input_filepath))
     for name, parameter in model_params.items():
         parameter = parameter.sort_index()
         model_params[name] = parameter
     model_params = modify_parameters(model_params, parameters, user_config)
-    # WriteDatapackage(user_config=user_config).write(model_params, output_filepath, default_values)
     WriteCsv(user_config=user_config).write(model_params, output_filepath, default_values)
 
 

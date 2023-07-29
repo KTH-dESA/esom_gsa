@@ -12,8 +12,8 @@ def solver_output(wildcards):
     else: 
         return rules.unzip_solution.output
 
-def datapackage_from_scenario(wildcards):
-    return SCENARIOS.loc[int(wildcards.scenario), 'datapackage']
+def csv_from_scenario(wildcards):
+    return SCENARIOS.loc[int(wildcards.scenario), 'csv']
 
 def config_from_scenario(wildcards):
     return SCENARIOS.loc[int(wildcards.scenario), 'config']
@@ -21,52 +21,51 @@ def config_from_scenario(wildcards):
 rule create_model_data:
     message: "Copying and modifying data for '{params.folder}'"
     input:
-        datapackage=datapackage_from_scenario,
+        csv=csv_from_scenario,
         sample="modelruns/{scenario}/model_{model_run}/sample_{model_run}.txt",
         config=config_from_scenario
-    log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
+    log: "results/log/copy_csv_{scenario}_{model_run}.log"
     params:
-        folder=directory("results/{scenario}/model_{model_run}")
+        folder=directory("results/{scenario}/model_{model_run}/data"),
     conda: "../envs/otoole.yaml"
     group: "gen_lp"
     output:
-        csv=expand("results/{{scenario}}/model_{{model_run}}/data/{csv}.csv", csv=INPUT_FILES)
+        csvs = expand("results/{{scenario}}/model_{{model_run}}/data/{x}.csv", x=INPUT_FILES)
     shell:
-        "python workflow/scripts/create_modelrun.py {input.datapackage} {params.folder}/data {input.sample} {input.config}"
+        "python workflow/scripts/create_modelrun.py {input.csv} {params.folder} {input.sample} {input.config}"
 
-rule copy_datapackage:
-    message: "Copying datapackage for '{params.folder}'"
+rule copy_otoole_config:
+    message: "Copying otoole configuration file for '{params.folder}'"
     input:
-        json=datapackage_from_scenario,
         yaml=config_from_scenario,
         csvs=rules.create_model_data.output,
-    log: "results/log/copy_datapackage_{scenario}_{model_run}.log"
+    log: "results/log/copy_csv_{scenario}_{model_run}.log"
     params:
         folder="results/{scenario}/model_{model_run}",
     output:
-        json="results/{scenario}/model_{model_run}/datapackage.json",
         yaml="results/{scenario}/model_{model_run}/config.yaml",
     log:
-        "results/log/copy_datapackage_{scenario}_{model_run}.log"
+        "results/log/copy_csv_{scenario}_{model_run}.log"
     shell:
         """
-        cp {input.json} {output.json}
         cp {input.yaml} {output.yaml}
         """
 
 rule generate_datafile:
     message: "Generating datafile for '{output}'"
     input:
-        datapackage="results/{scenario}/model_{model_run}/datapackage.json",
+        csv = rules.create_model_data.output,
         config="results/{scenario}/model_{model_run}/config.yaml"
     output:
-        temp("temp/{scenario}/model_{model_run}.txt")
+        datafile = temp("temp/{scenario}/model_{model_run}.txt")
+    params:
+        csv_dir = "results/{scenario}/model_{model_run}/data/"
     conda: "../envs/otoole.yaml"
     group: "gen_lp"
     log:
         "results/log/otoole_{scenario}_{model_run}.log"
     shell:
-        "otoole -v convert datapackage datafile {input.datapackage} {output} {input.config} 2> {log}"
+        "otoole -v convert csv datafile {params.csv_dir} {output.datafile} {input.config} 2> {log}"
 
 rule modify_model_file:
     message: "Adding MODEX sets to model file"
@@ -193,7 +192,7 @@ rule process_solution:
     group: 'results'
     input:
         solution=solver_output,
-        datapackage="results/{scenario}/model_{model_run}/datapackage.json",
+        datafile="temp/{scenario}/model_{model_run}.txt",
         config="results/{scenario}/model_{model_run}/config.yaml",
     output: 
         expand("results/{{scenario}}/model_{{model_run}}/results/{csv}.csv", csv=OUTPUT_FILES)
@@ -204,7 +203,7 @@ rule process_solution:
     shell: 
         """
         mkdir -p {params.folder}
-        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datapackage {input.datapackage} {input.config} &> {log}
+        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datafile {input.datafile} {input.config} &> {log}
         """
 
 rule get_statistics:
