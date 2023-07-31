@@ -102,7 +102,7 @@ rule generate_lp_file:
     shell:
         "glpsol -m {input.model} -d {input.data} --wlp {output} --check > {log}"
 
-rule unzip:
+rule unzip_lp:
     message: "Unzipping LP file"
     input:
         "temp/{scenario}/model_{model_run}.lp.gz"
@@ -119,7 +119,7 @@ rule solve_lp:
         "temp/{scenario}/model_{model_run}.lp"
     output:
         json="modelruns/{scenario}/model_{model_run}/{model_run}.json",
-        solution=temp("temp/{scenario}/model_{model_run}.sol")
+        solution=temp(expand("temp/{{scenario}}/model_{{model_run}}.sol{zip}", zip = ZIP))
     log:
         "results/log/solver_{scenario}_{model_run}.log"
     params:
@@ -152,13 +152,6 @@ rule solve_lp:
           cbc {input} solve -sec 1500 -solu {output.solution} 2> {log} && touch {output.json}
         fi
         """
-
-rule zip_solution:
-    message: "Zip up solution file {input}"
-    group: "solve"
-    input: "temp/{scenario}/model_{model_run}.sol"
-    output: expand("temp/{{scenario}}/{{model_run}}.sol{zip_extension}", zip_extension=ZIP)
-    shell: "gzip -fcq {input} > {output}"
 
 rule unzip_solution:
     message: "Unzip solution file {input}"

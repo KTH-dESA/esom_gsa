@@ -4,7 +4,7 @@ import numpy as np
 from typing import Dict
 import pandas as pd
 
-def main(morris_sample: np.array, parameters: pd.DataFrame, value_for_interpolate: str = "average") -> np.array:
+def main(morris_sample: np.array, parameters: pd.DataFrame, value_for_interpolate: str = "end") -> np.array:
     """Very important to preserve order of sample and parameters"""
     
     scaled = morris_sample.copy()

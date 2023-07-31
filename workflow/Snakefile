@@ -52,6 +52,7 @@ files_to_remove = [
 ]
 OUTPUT_FILES = [x for x in OUTPUT_FILES if x not in files_to_remove]
 
+include: "rules/sample.smk"
 include: "rules/osemosys.smk"
 include: "rules/results.smk"
 
@@ -78,54 +79,6 @@ rule all:
         expand("results/{scenario}_summary/{result_file}_heatmap.png", scenario=SCENARIOS.index, result_file=RESULT_FILES),
                
     message: "Running pipeline to generate the sensitivity analysis results"
-
-rule get_status:
-    params:
-        modelruns=len(MODELRUNS),
-        scenarios=len(SCENARIOS)
-    input: expand("temp/{scenario}/model_{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
-    output: "results/status.csv"
-    log: "results/log/status.log"
-    shell:
-        """
-        if [ {config[solver]} = gurobi ]
-        then
-            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
-        elif [ {config[solver]} = cplex ]
-            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
-        else
-            #! /bin/bash -x
-            echo "SCENARIO,FILE,OBJECTIVE,STATUS" > {output}
-            for FILE in ({input})
-            do
-            OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
-            STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
-            JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
-            echo "1,$JOB,$OBJ,$STATUS" >> {output}
-            done
-        fi
-        """
-
-rule create_sample:
-    message: "Creating sample for '{params.replicates}' trajectories and '{params.parameters}' parameters"
-    params:
-        replicates=config['replicates'],
-        parameters=config['parameters']
-    output: "modelruns/{scenario}/morris_sample.txt"
-    conda: "envs/sample.yaml"
-    log: "results/log/create_{scenario}_sample.log"
-    shell:
-        "python workflow/scripts/create_sample.py {params.parameters} {output} {params.replicates}"
-
-rule expand_sample:
-    params:
-        parameters=config['parameters']
-    input: "modelruns/{scenario}/morris_sample.txt"
-    output: expand("modelruns/{{scenario}}/model_{model_run}/sample_{model_run}.txt", model_run=MODELRUNS)
-    conda: "envs/sample.yaml"
-    log: "results/log/expand_{scenario}_sample.log"
-    shell:
-        "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
 
 rule clean:
     shell:

@@ -83,7 +83,7 @@ def plot_histogram(problem: dict, X: np.array, fig: plt.figure):
     fig.legend(handles=legend_handles, ncol=ncols, frameon=False, fontsize='small')
     fig.suptitle(' ', fontsize=(ncols * 20))
 
-def sa_results(parameters: dict, X: np.array, Y: np.array, save_file: str):
+def sa_results(parameters: dict, X: np.array, Y: np.array, save_file: str, scaled: bool = False):
     """Performs SA and plots results. 
 
     Parameters
@@ -96,11 +96,13 @@ def sa_results(parameters: dict, X: np.array, Y: np.array, save_file: str):
         Results 
     save_file : str
         File path to save results
+    scaled : bool = False
+        If the input sample is scaled
     """
 
     problem = utils.create_salib_problem(parameters)
 
-    Si = analyze_morris.analyze(problem, X, Y, print_to_console=False)
+    Si = analyze_morris.analyze(problem, X, Y, print_to_console=False, scaled=scaled)
 
     # Save text based results
     Si.to_df().to_csv(f'{save_file}.csv')
@@ -109,8 +111,9 @@ def sa_results(parameters: dict, X: np.array, Y: np.array, save_file: str):
     title = Path(save_file).stem.capitalize()
     fig, axs = plt.subplots(2, figsize=(10,8))
     fig.suptitle(title, fontsize=20)
-    plot_morris.horizontal_bar_plot(axs[0], Si, unit="(\$)")
-    plot_morris.covariance_plot(axs[1], Si, unit="(\$)")
+    unit = "" if scaled else "(\$)"
+    plot_morris.horizontal_bar_plot(axs[0], Si, unit=unit)
+    plot_morris.covariance_plot(axs[1], Si, unit=unit)
 
     fig.savefig(f'{save_file}.png', bbox_inches='tight')
 
@@ -121,6 +124,7 @@ if __name__ == "__main__":
     model_results = sys.argv[3]
     save_file = str(Path(sys.argv[4]).with_suffix(''))
     result_type = sys.argv[5]
+    scaled = sys.argv[6]
 
     with open(parameters_file, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
@@ -138,12 +142,9 @@ if __name__ == "__main__":
             f"{result_type}"
         )
         
-    print(sys.argv[4])
-    print(Path(sys.argv[4]).parent)
-    print(Path(sys.argv[4]).parent.is_dir())
     if not Path(sys.argv[4]).parent.is_dir():
         new_dir = Path(sys.argv[4]).parent
         new_dir.mkdir(parents=True)
 
-    sa_results(parameters, X, Y, save_file)
+    sa_results(parameters, X, Y, save_file, scaled)
     

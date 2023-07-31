@@ -68,7 +68,7 @@ def sort_results(df : pd.DataFrame, year : int) -> np.array:
     Y = df.to_numpy()
     return Y
 
-def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: str):
+def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: str, scaled: bool = False):
     """Performs SA and plots results. 
 
     Parameters
@@ -81,6 +81,8 @@ def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: 
         Model results for a OSeMOSYS variable 
     save_file : str
         File path to save results
+    scaled : bool = False
+        If the input sample is scaled
     """
 
     problem = utils.create_salib_problem(parameters)
@@ -91,7 +93,7 @@ def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: 
 
     for year in model_results.index.unique(level='YEAR'):
         Y = sort_results(model_results, year)
-        Si = analyze_morris.analyze(problem, X, Y, print_to_console=False)
+        Si = analyze_morris.analyze(problem, X, Y, print_to_console=False, scaled=scaled)
         SA_result_data.append(Si['mu_star'])
     
     SA_result_data = np.ma.concatenate([SA_result_data])
@@ -113,11 +115,13 @@ if __name__ == "__main__":
     sample = sys.argv[2]
     result_file = sys.argv[3]
     save_file = str(Path(sys.argv[4]).with_suffix(''))
+    scaled = sys.argv[5]
+    
     with open(parameters_file, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
 
     X = np.loadtxt(sample, delimiter=',')
     results = pd.read_csv(result_file)
 
-    main(parameters, X, results, save_file)
+    main(parameters, X, results, save_file, scaled)
     
