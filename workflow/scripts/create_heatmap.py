@@ -116,6 +116,7 @@ if __name__ == "__main__":
     result_file = sys.argv[3]
     save_file = str(Path(sys.argv[4]).with_suffix(''))
     scaled = sys.argv[5]
+    scaled = False if scaled == "False" else True
     
     with open(parameters_file, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))

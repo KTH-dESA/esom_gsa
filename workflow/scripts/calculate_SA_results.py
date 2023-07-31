@@ -101,7 +101,6 @@ def sa_results(parameters: dict, X: np.array, Y: np.array, save_file: str, scale
     """
 
     problem = utils.create_salib_problem(parameters)
-
     Si = analyze_morris.analyze(problem, X, Y, print_to_console=False, scaled=scaled)
 
     # Save text based results
@@ -125,6 +124,7 @@ if __name__ == "__main__":
     save_file = str(Path(sys.argv[4]).with_suffix(''))
     result_type = sys.argv[5]
     scaled = sys.argv[6]
+    scaled = False if scaled == "False" else True
 
     with open(parameters_file, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
