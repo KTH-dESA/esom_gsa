@@ -55,6 +55,7 @@ OUTPUT_FILES = [x for x in OUTPUT_FILES if x not in files_to_remove]
 include: "rules/sample.smk"
 include: "rules/osemosys.smk"
 include: "rules/results.smk"
+include: "rules/paper.smk"
 
 # needed for running examples via jupyter notebook 
 args = sys.argv
