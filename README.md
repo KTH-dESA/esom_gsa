@@ -50,9 +50,9 @@ pip install -r requirements.txt
 
 ### Configuration File: `config.yaml`
 
-The file `config/config.yaml` holds workflow configuration options. These options include the location of the model and accompanying data, solver, and sensitivity analysis parameters. Details on how to modify all configuration parameters are located in the `config.yaml` file.
+The file `config/config.yaml` holds workflow configuration options. These options include the location of the model and accompanying data, solver, and sensitivity analysis parameters. Details on how to modify all configuration parameters are located in the `config/yaml` file.
 
-Datapackage and model file paths can  point to the repositories outside of the gui_workflow. So deployment to an HPC will involve:
+Data and model file paths can  point to the repositories outside of the gui_workflow. So deployment to an HPC will involve:
 
 1. Copying a release package of OSeMOSYS to the server and unzipping
 2. Cloning the gui_osemosys repository to the server
@@ -120,14 +120,14 @@ column_name | description
 :-- | :--
 name | Index of the scenarion
 description | Description of the scenario
-datapackage | path to otool datapackage
+csv | path to otool csv folder 
 config | path to otool config file
 
 An example of a correctly formatted CSV file is shown below.
 
 ```csv
-name,description,datapackage, config
-0,"Interconnector Optimised",config/scenarios/scenario_1/datapackage.json, config/scenarios/scenario_1/config.yaml
+name,description,csv,config
+0,"Interconnector Optimised",config/scenarios/scenario_1/, config/scenarios/scenario_1/config.yaml
 ```
 
 ## Running the workflow
@@ -173,6 +173,45 @@ This repository follows the snakemake guidelines for reproducibility:
     │   └── some-sheet.csv
     ├── results
     └── resources
+
+## Recreate Paper Results
+
+To recreate the results shown in the accompanying [sensitivity analysis paper](https://doi.org/10.12688/openreseurope.15461.1), follow the steps below. 
+
+1. Pull all data associated with the paper using snakemake 
+```
+snakemake setup_paper_data -c
+```
+This will add a `papers/` folder to the root directory that holds all model data, model results, and configuration options. Additionaly, it will populate the five different model runs in the `config/` folder for the user to run. 
+
+A breakdown of the model naming is shown below
+
+Model Identifier | Scenario Number | Model Description
+:-- | :-- | :--
+1a  | 0   | Model 1 without including demand as as sensitivity measure
+1b  | 1   | Model 1 with including demand as a sensitivity measure
+2a  | 2   | Model 2 without the emission limit
+2b  | 3   | Model 2 with the emission limit 
+3   | 4   | Model 3 generated from OSeMOSYS Global 
+
+2. Run each models one at a time. Since we are varrying what values are included in the sensitivity measuress between models 1a and 1b, and 2a and 2b, we must run them individually. 
+
+Copy over the model 1a configuration file 
+```bash
+cp config/model_1a/config.config.yaml config/config.yaml
+```
+
+Run the workflow for model 1a
+```bash
+snakemake --use-conda --cores 4 --resources mem_mb=16000 disk_mb=30000
+```
+
+Repeat this process for models `1b`, `2a`, `2b`, `3`
+
+3. Plot visualizations by running each jupyter notebook in `workflow/notebooks/`. For 
+the capacity, investment, and emission results, you can run the notebooks associated 
+with the downloaded model data in `papers/notebooks/`. 
+
 
 ## Acknowledgements
 
