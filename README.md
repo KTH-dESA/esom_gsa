@@ -180,25 +180,26 @@ To recreate the results shown in the accompanying [sensitivity analysis paper](h
 
 1. Pull all data associated with the paper using snakemake 
 ```
-snakemake setup_paper_data -c
+snakemake setup_paper_data -c --config skip_checks
 ```
-This will add a `papers/` folder to the root directory that holds all model data, model results, and configuration options. Additionaly, it will populate the five different model runs in the `config/` folder for the user to run. 
+This will add a `papers/` folder to the root directory that holds all model data, model results, and configuration options. Additionaly, it will populate the five different model runs in the `config/` folder for the user to run. Note, you must pass in the `--config skip_checks` flag to skip pre-run configuration file checks
 
 A breakdown of the model naming is shown below
 
-Model Identifier | Scenario Number | Model Description
+Model | Scenario Number | Model Description
 :-- | :-- | :--
 1a  | 0   | Model 1 without including demand as as sensitivity measure
 1b  | 1   | Model 1 with including demand as a sensitivity measure
 2a  | 2   | Model 2 without the emission limit
 2b  | 3   | Model 2 with the emission limit 
-3   | 4   | Model 3 generated from OSeMOSYS Global 
+3a  | 4   | Model 3 generated from OSeMOSYS Global without scaling 
+3b  | 5   | Model 3 generated from OSeMOSYS Global with scaling 
 
-2. Run each models one at a time. Since we are varrying what values are included in the sensitivity measuress between models 1a and 1b, and 2a and 2b, we must run them individually. 
+2. Run each models one at a time. Since we are varrying what values are included in the sensitivity measures between each model (1a and 1b for example), we can not run each scenario in parallel. 
 
 Copy over the model 1a configuration file 
 ```bash
-cp config/model_1a/config.config.yaml config/config.yaml
+cp config/model_1a/config.yaml config/config.yaml
 ```
 
 Run the workflow for model 1a
@@ -206,11 +207,13 @@ Run the workflow for model 1a
 snakemake --use-conda --cores 4 --resources mem_mb=16000 disk_mb=30000
 ```
 
-Repeat this process for models `1b`, `2a`, `2b`, `3`
+Repeat this process for models `1b`, `2a`, `2b`, `3a` and `3b`
+
+**NOTE: Running model 3 requires ~30min on a workstation caliber computer**
 
 3. Plot visualizations by running each jupyter notebook in `workflow/notebooks/`. For 
 the capacity, investment, and emission results, you can run the notebooks associated 
-with the downloaded model data in `papers/notebooks/`. 
+with the downloaded model data in `papers/notebooks/`.
 
 
 ## Acknowledgements

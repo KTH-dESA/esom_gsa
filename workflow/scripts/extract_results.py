@@ -20,6 +20,30 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
+def default_value_xs(df: pd.DataFrame, index: Tuple, parameters: Tuple):
+    """Populates a dataframe with zero values"""
+    
+    df = df.reset_index()
+    df = df.drop(columns="VALUE")
+    col_order = df.columns.to_list()
+    
+    col_data = {}
+    for col in df.columns:
+        if col not in index:
+            col_data[col] = [df[col].unique()]
+    for i, _ in enumerate(index):
+        col_data[index[i]] = [[parameters[i]]]
+
+    df = pd.DataFrame(col_data)
+    all_cols = df.columns
+    for col in all_cols:
+        df = df.explode(column=col)
+    df["VALUE"] = 0
+    
+    df = df.set_index(col_order)
+    return df
+    
+
 def get_indices(parameters : pd.DataFrame, filename : str) -> Dict :
     indices = parameters.set_index('filename').loc[filename].dropna().drop('resultfile')
     indices = indices.to_dict()
@@ -61,14 +85,13 @@ def main(input_files: List, output_file: str, indices: Tuple, config: Dict):
                 results = df.xs(param, level=index, drop_level=False)
                 result_dfs.append(results)
             except KeyError as ex:
-                raise ex
+                # no results for this index-parameter pair
+                results = default_value_xs(df, index, param)
+                result_dfs.append(results)
         results = pd.concat(result_dfs)
         results = results.reset_index(level='YEAR')
         ################################################################
-        # results['SCENARIO'] = bits['scenario']
         results['MODELRUN'] = bits['model_run']
-        # results = results.reset_index(
-        #     ).set_index(['SCENARIO', 'MODELRUN'] + df_index)
         results = results.reset_index(
             ).set_index(['MODELRUN'] + df_index)
         aggregated_results.append(results)
