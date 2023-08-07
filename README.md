@@ -48,6 +48,9 @@ pip install -r requirements.txt
 
 ## Configure the workflow
 
+### Template files 
+There are template files in the folder `resources/templates/` that help the user set up configuration files. Moreover, the `Tutorial.ipynb` notebook provides practical instructions on how to use the configuration files. 
+
 ### Configuration File: `config.yaml`
 
 The file `config/config.yaml` holds workflow configuration options. These options include the location of the model and accompanying data, solver, and sensitivity analysis parameters. Details on how to modify all configuration parameters are located in the `config/yaml` file.
