@@ -215,7 +215,7 @@ def check_parameter_index_data(
         raise ValueError(
             f"The indices provided for {param['name']} of {param_index} do "
             f"not correspond to the following indices specified in the "
-            f"datapackge: {config_indices}"
+            f"csv data: {config_indices}"
         )
 
     for num, index in enumerate(config_indices):
