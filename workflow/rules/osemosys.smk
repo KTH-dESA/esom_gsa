@@ -196,7 +196,7 @@ rule process_solution:
     shell: 
         """
         mkdir -p {params.folder}
-        otoole -v results {config[solver]} csv {input.solution} {params.folder} --input_datafile {input.datafile} {input.config} &> {log}
+        otoole -v results {config[solver]} csv {input.solution} {params.folder} datafile {input.datafile} {input.config} &> {log}
         """
 
 rule get_statistics:
