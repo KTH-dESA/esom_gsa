@@ -6,12 +6,6 @@ wildcard_constraints:
 
 ruleorder: unzip_solution > solve_lp
 
-def solver_output(wildcards):
-    if config['solver'] == 'cplex':
-        return rules.sort_transformed_solution.output
-    else: 
-        return rules.unzip_solution.output
-
 def csv_from_scenario(wildcards):
     return SCENARIOS.loc[int(wildcards.scenario), 'csv']
 
@@ -147,7 +141,7 @@ rule solve_lp:
           echo "baropt"                  >> {params.cplex}
           echo "write {output.solution}" >> {params.cplex}
           echo "quit"                    >> {params.cplex}
-        cplex < {params.cplex} > {log} && touch {output.json}
+          cplex < {params.cplex} > {log} && touch {output.json}
         else
           cbc {input} solve -sec 1500 -solu {output.solution} 2> {log} && touch {output.json}
         fi
@@ -160,31 +154,11 @@ rule unzip_solution:
     output: temp("temp/{scenario}/model_{model_run}.sol")
     shell: "gunzip -fcq {input} > {output}"
 
-rule transform_file:
-    message: "Transforming CPLEX sol file '{input}'"
-    group: 'results'
-    input: rules.unzip_solution.output
-    conda: "../envs/otoole.yaml"
-    output:
-        temp("temp/{scenario}/model_{model_run}_trans.sol")
-    shell:
-        "python workflow/scripts/transform_31072013.py {input} {output}"
-
-rule sort_transformed_solution:
-    message: "Sorting transformed CPLEX sol file '{input}'"
-    group: 'results'
-    input:
-        "temp/{scenario}/model_{model_run}_trans.sol"
-    output:
-        temp("temp/{scenario}/model_{model_run}_sorted.sol")
-    shell:
-        "sort {input} > {output}"
-
 rule process_solution:
     message: "Processing {config[solver]} solution for '{output}'"
     group: 'results'
     input:
-        solution=solver_output,
+        solution="temp/{scenario}/model_{model_run}.sol",
         datafile="temp/{scenario}/model_{model_run}.txt",
         config="results/{scenario}/model_{model_run}/config.yaml",
     output: 
@@ -201,7 +175,7 @@ rule process_solution:
 
 rule get_statistics:
     message: "Extract the {config[solver]} statistics from the sol file"
-    input: rules.solve_lp.output.solution
+    input: "temp/{scenario}/model_{model_run}.sol"
     output: "modelruns/{scenario}/model_{model_run}/{model_run}.stats"
     group: "solve"
     shell: 
