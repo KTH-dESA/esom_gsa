@@ -1,0 +1,32 @@
+# This file must be named config.yaml and placed in the config/ directory
+
+# Populate the scenarios.csv file with a list of scenario names
+# and path (description optional) to the model csv data
+scenarios: config/scenarios.csv
+
+# Tell the workflow which model results to plot
+results: config/results.csv
+
+# Filetype options: 'csv' or 'parquet' or 'feather'
+filetype: csv
+
+# Define the uncertain parameters used to define the Monte Carlo sample
+parameters: config/parameters.csv
+
+# Path to the OSeMOSYS model file
+model_file: resources/osemosys_fast.txt
+
+# Choose a solver, choices: 'cbc' or 'gurobi' or 'cplex'
+solver: cplex
+
+# Sampling - how large should the sample be?
+replicates: 10
+
+# Scale Elementary Effects (True/False)
+scale: False
+
+# For large models, zip lp file and solution (True/False)
+zip: True
+
+# Only works for OSeMOSYS Global Naming Conventions (True/False)
+re_share: True 
