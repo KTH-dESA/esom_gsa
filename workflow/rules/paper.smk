@@ -19,7 +19,9 @@ rule setup_paper_data:
 
 rule retrieve_zenodo_data:
     params: 
-        doi = "https://doi.org/10.5281/zenodo.7548829", # to update
+        # doi = "https://zenodo.org/records/10107849",
+        doi = "10107849",
+        save = "./" # root folder
     output:
         csvs = expand("paper/model_{model}/model/data/{input_file}.csv", model = MODELS, input_file=INPUT_FILES),
         model = expand("paper/model_{model}/model/osemosys_fast.txt", model = MODELS),
@@ -29,7 +31,7 @@ rule retrieve_zenodo_data:
     log:
         "logs/retrieve_zenodo_data_model.log",
     script:
-        "scripts/retrieve_zenodo_data.py"
+        "../scripts/retrieve_zenodo_data.py"
 
 rule create_paper_model_directory:
     output:
