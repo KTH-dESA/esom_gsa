@@ -17,7 +17,7 @@ parameters: config/parameters.csv
 model_file: resources/osemosys_fast.txt
 
 # Choose a solver, choices: 'cbc' or 'gurobi' or 'cplex'
-solver: cplex
+solver: cbc
 
 # Sampling - how large should the sample be?
 replicates: 10
