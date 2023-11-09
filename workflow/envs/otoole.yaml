@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - pip
-  - pandas
+  - pandas<2.1
   - python=3
   - numpy
   - pyarrow

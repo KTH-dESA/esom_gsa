@@ -4,7 +4,7 @@ dependencies:
   - pip
   - numpy
   - matplotlib
-  - pandas
+  - pandas<2.1
   - seaborn
   - pip:
     - SALib>=1.4.0b0
