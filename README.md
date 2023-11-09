@@ -128,7 +128,7 @@ TotalCapacityAnnual,TotalCapacityAnnualCCNGLastYear,"R1","CCNG",,,2070
 
 ## Running the workflow
 
-To run the workflow, using the command `snakemake --cores 4 --resources mem_mb=16000 disk_mb=30000`
+To run the workflow, using the command `snakemake --use-conda --cores 4 --resources mem_mb=16000 disk_mb=30000`
 
 You can also change parts of the configuration by adding the `--config` flag, followed by the names of one or more of the config items. E.g.
 
@@ -213,7 +213,7 @@ cp config/model_1a/config.yaml config/config.yaml
 
 Run the workflow for model 1a
 ```bash
-snakemake --cores 4 --resources mem_mb=16000 disk_mb=30000
+snakemake --use-conda --cores 4 --resources mem_mb=16000 disk_mb=30000
 ```
 
 Repeat this process for models `1b`, `2a`, `2b`, `3a` and `3b`
