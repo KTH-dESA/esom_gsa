@@ -11,9 +11,8 @@ dependencies:
   - xlrd
   - pyyaml
   - pydot
- # - datapackage>=1.9,<2
   - amply>=0.1.4
   - networkx
   - openpyxl
   - pip:
-    - otoole>=1.0.4
+    - otoole>=1.1.0

@@ -38,7 +38,7 @@ conda install -c conda-forge mamba
 mamba create -c bioconda -c conda-forge -n snakemake snakemake-minimal pandas
 ```
 
-Then, activate the environment using `conda activate snakemake` on Mac and Linux, or `activate snakemake` on Windows.
+Then, activate the environment using `conda activate snakemake`
 
 Now install the other dependencies using pip:
 

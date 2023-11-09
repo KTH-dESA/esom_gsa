@@ -18,4 +18,4 @@ dependencies:
   - seaborn
   - pip:
     - SALib>=1.4.0b0
-    - otoole>=1.0.4
+    - otoole>=1.1.0
