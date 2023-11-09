@@ -1,0 +1,10 @@
+channels:
+  - conda-forge
+dependencies:
+  - pip
+  - numpy
+  - matplotlib
+  - pandas
+  - seaborn
+  - pip:
+    - SALib>=1.4.0b0
