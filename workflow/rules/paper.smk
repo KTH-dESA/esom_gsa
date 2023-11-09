@@ -1,6 +1,7 @@
 """Rules to retrieve and run results for the submitted paper"""
 
 MODELS = ["1a", "1b", "2a", "2b", "3a", "3b"]
+MODEL_NUMS = [1,2,3]
 GSA_FILES = ["parameters", "results", "scenarios"]
 
 wildcard_constraints:
@@ -15,7 +16,7 @@ rule setup_paper_data:
         results = expand("config/model_{model}/results.csv", model = MODELS),
         scenarios = expand("config/model_{model}/scenarios.csv", model = MODELS),
         config = expand("config/model_{model}/config.yaml", model = MODELS),
-        notebooks = expand("workflow/notebooks/model_{model_num}.ipynb", model_num = [1,2,3]),
+        notebooks = expand("workflow/notebooks/model_{model_num}.ipynb", model_num = MODEL_NUMS),
 
 rule retrieve_zenodo_data:
     params: 
@@ -27,7 +28,8 @@ rule retrieve_zenodo_data:
         model = expand("paper/model_{model}/model/osemosys_fast.txt", model = MODELS),
         otoole_config = expand("paper/model_{model}/model/config.yaml", model = MODELS),
         gsa_files = expand("paper/model_{model}/config/{gsa_file}.csv", model = MODELS, gsa_file=GSA_FILES),
-        notebooks = expand("paper/notebooks/model_{model_num}_gsa.ipynb", model_num=[1, 2, 3])
+        gsa_config = expand("paper/model_{model}/config/config.yaml", model = MODELS),
+        notebooks = expand("paper/notebooks/model_{model_num}_gsa.ipynb", model_num = MODEL_NUMS)
     log:
         "logs/retrieve_zenodo_data_model.log",
     script:
