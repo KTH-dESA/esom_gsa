@@ -185,10 +185,10 @@ This repository follows the snakemake guidelines for reproducibility:
 
 To recreate the results shown in the accompanying [sensitivity analysis paper](https://doi.org/10.12688/openreseurope.15461.1), follow the steps below. 
 
-1. Pull all data associated with the paper using snakemake. Note, you must pass in the `--config skip_checks` flag to skip pre-run configuration file checks
+1. Pull all data associated with the paper using snakemake. Note, you must pass in the `--config skip_checks=True` flag to skip pre-run configuration file checks
 
 ```bash
-snakemake setup_paper_data -j6 --config skip_checks
+snakemake setup_paper_data -j6 --config skip_checks=True
 ```
 
 This will add a `papers/` folder to the root directory that holds all model data, model results, and configuration options. Additionaly, it will populate six different model runs in the `config/` folder and `resources/` folder. The files in these folders are the configurations used for the paper. 
