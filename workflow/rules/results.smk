@@ -78,6 +78,7 @@ rule create_heatmap:
         results=expand("results/{{scenario}}/{{result_file}}.{ext}", ext=config['filetype'])
     output:
         "results/{scenario}_summary/{result_file}_heatmap.png"
+    conda: "../envs/heatmap.yaml"
     shell: 
         "python workflow/scripts/create_heatmap.py {params.parameters} {input.sample} {input.results} {output} {params.scaled}"
 
@@ -91,6 +92,7 @@ rule plot_interactions:
         results = "results/{scenario}/objective_{scenario}.csv"
     output:
         "results/{scenario}_summary/SA_interactions.png"
+    conda: "../envs/sample.yaml"
     shell:
         "python workflow/scripts/plot_interactions.py {params.parameters} {input.sample} {input.results} {output}"
 
