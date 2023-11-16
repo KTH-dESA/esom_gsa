@@ -15,6 +15,7 @@ dependencies:
   - python>=3
   - pyyaml
   - snakemake-minimal
+  - seaborn
   - pip:
     - SALib>=1.4.0b0
-    - otoole==0.11.0
+    - otoole>=1.1.0

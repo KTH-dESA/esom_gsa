@@ -3,10 +3,8 @@ channels:
 dependencies:
   - pip
   - numpy
-  - scipy
   - matplotlib
   - pandas<2.1
-  - setuptools
-  - pyyaml
+  - seaborn
   - pip:
-    - git+https://github.com/SALib/SALib@main
+    - SALib>=1.4.0b0

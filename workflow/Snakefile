@@ -1,5 +1,9 @@
 import pandas as pd
 import sys
+from typing import List 
+from yaml import load
+from otoole.utils import UniqueKeyLoader
+
 configfile: "config/config.yaml"
 localrules: all, clean
 wildcard_constraints:
@@ -9,19 +13,60 @@ wildcard_constraints:
 
 container: "docker://condaforge/mambaforge:4.10.1-0"
 
-SCENARIOS = pd.read_csv(config["datapackage"]).set_index('name')
+SCENARIOS = pd.read_csv(config["scenarios"]).set_index('name')
 GROUPS = pd.read_csv(config['parameters'])['group'].unique()
+
 # Calculates number of model runs for the Method of Morris
 MODELRUNS = range((len(GROUPS) + 1) * config['replicates'])
 RESULTS = pd.read_csv(config["results"])
 RESULT_FILES = RESULTS['filename'].to_list()
 ZIP = '.gz' if config['zip'] else ''
-INPUT_FILES = pd.read_csv('resources/otoole_files.csv')['inputs'].to_list()
-OUTPUT_FILES = pd.read_csv('resources/otoole_files.csv')['outputs'].dropna().to_list()
 
+# Get list of expected input/output files from otoole config.
+
+# While these are only tied to a single scenario, since the user only supplies
+# one model file, the params and variables can not change between scenarios
+def get_expected_files(config: str, config_type: str) -> List[str]:
+    if config_type not in ["param", "result", "set"]:
+        return TypeError(f"Type must be 'param', 'result', or 'set'. Recieved {config_type}.")
+    with open(config, "r") as f:
+        parsed_config = load(f, Loader=UniqueKeyLoader)
+    return [x for x, y in parsed_config.items() if y["type"] == config_type]
+
+# may get type error if just extracting paper data 
+if "skip_checks" in config:
+    otoole_config_path = "resources/templates/otoole.yaml"
+else:
+    first_scenario_name = SCENARIOS.index[0]
+    otoole_config_path = SCENARIOS.loc[first_scenario_name, 'config']
+    
+INPUT_FILES_PARAMS = get_expected_files(otoole_config_path, "param")
+INPUT_FILES_SETS = get_expected_files(otoole_config_path, "set")
+INPUT_FILES = INPUT_FILES_PARAMS + INPUT_FILES_SETS
+
+OUTPUT_FILES = get_expected_files(otoole_config_path, "result")
+
+# bug in otoole 1.0.4 where these are not being properly calculated 
+files_to_remove = [
+    "CapitalInvestment", 
+    "NewStorageCapacity", 
+    "NumberOfNewTechnologyUnits", 
+    "SalvageValueStorage", 
+    "StorageLevelDayTypeFinish", 
+    "StorageLevelDayTypeStart", 
+    "StorageLevelSeasonStart", 
+    "StorageLevelYearFinish", 
+    "StorageLevelYearStart", 
+    "Trade"
+]
+OUTPUT_FILES = [x for x in OUTPUT_FILES if x not in files_to_remove]
+
+include: "rules/sample.smk"
 include: "rules/osemosys.smk"
 include: "rules/results.smk"
+include: "rules/paper.smk"
 
+# needed for running examples via jupyter notebook 
 args = sys.argv
 try:
     config_path = args[args.index("--configfile") + 1]
@@ -29,8 +74,9 @@ except ValueError:
     config_path = 'config/config.yaml'
     
 onstart:
-    print('Checking user inputs...')
-    shell("python workflow/scripts/check_inputs.py {}".format(config_path))
+    if "skip_checks" not in config:
+        print('Checking user inputs...')
+        shell("python workflow/scripts/check_inputs.py {}".format(config_path))
 
 onsuccess:
     print('Workflow finished successfully!')
@@ -39,59 +85,11 @@ rule all:
     input:
         expand("results/{scenario}_summary/SA_objective.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png']),
         expand("results/{scenario}_summary/SA_{result_file}.{extension}", scenario=SCENARIOS.index, extension=['csv', 'png'], result_file=RESULT_FILES),
-        expand("results/{scenario}_summary/SA_interactions.png", scenario=SCENARIOS.index),
+        # expand("results/{scenario}_summary/SA_interactions.png", scenario=SCENARIOS.index),
         expand("results/{scenario}/model_{model_run}/results/{x}.csv", x=OUTPUT_FILES, model_run=MODELRUNS, scenario=SCENARIOS.index),
         expand("results/{scenario}_summary/{result_file}_heatmap.png", scenario=SCENARIOS.index, result_file=RESULT_FILES),
                
     message: "Running pipeline to generate the sensitivity analysis results"
-
-rule get_status:
-    params:
-        modelruns=len(MODELRUNS),
-        scenarios=len(SCENARIOS)
-    input: expand("temp/{scenario}/model_{model_run}.sol", model_run=MODELRUNS, scenario=SCENARIOS.index)
-    output: "results/status.csv"
-    log: "results/log/status.log"
-    shell:
-        """
-        if [ {config[solver]} = gurobi ]
-        then
-            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
-        elif [ {config[solver]} = cplex ]
-            python workflow/scripts/run_status.py {output} {params.modelruns} {params.scenarios}
-        else
-            #! /bin/bash -x
-            echo "SCENARIO,FILE,OBJECTIVE,STATUS" > {output}
-            for FILE in ({input})
-            do
-            OBJ=$(head $FILE | grep -e 'objectiveValue' | cut -f 2 -d '=')
-            STATUS=$(head $FILE | grep -e 'solutionStatusString' | cut -f 2 -d '=')
-            JOB=$(echo $FILE | cut -f 3 -d '/' | cut -f 1 -d '.')
-            echo "1,$JOB,$OBJ,$STATUS" >> {output}
-            done
-        fi
-        """
-
-rule create_sample:
-    message: "Creating sample for '{params.replicates}' trajectories and '{params.parameters}' parameters"
-    params:
-        replicates=config['replicates'],
-        parameters=config['parameters']
-    output: "modelruns/{scenario}/morris_sample.txt"
-    conda: "envs/sample.yaml"
-    log: "results/log/create_{scenario}_sample.log"
-    shell:
-        "python workflow/scripts/create_sample.py {params.parameters} {output} {params.replicates}"
-
-rule expand_sample:
-    params:
-        parameters=config['parameters']
-    input: "modelruns/{scenario}/morris_sample.txt"
-    output: expand("modelruns/{{scenario}}/model_{model_run}/sample_{model_run}.txt", model_run=MODELRUNS)
-    conda: "envs/sample.yaml"
-    log: "results/log/expand_{scenario}_sample.log"
-    shell:
-        "python workflow/scripts/expand_sample.py {input} {params.parameters} {output}"
 
 rule clean:
     shell:

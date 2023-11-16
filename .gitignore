@@ -1,3 +1,8 @@
+# files creates when replicating paper
+paper/*
+resources/model*/
+workflow/notebooks/model*.ipynb
+
 # Development
 .vscode
 

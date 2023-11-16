@@ -4,16 +4,15 @@ channels:
   - defaults
 dependencies:
   - pip
-  - pandas
+  - pandas<2.1
   - python=3
   - numpy
   - pyarrow
   - xlrd
   - pyyaml
   - pydot
-  - datapackage>=1.9,<2
   - amply>=0.1.4
   - networkx
   - openpyxl
   - pip:
-    - git+https://github.com/willu47/otoole.git@temba
+    - otoole>=1.1.0

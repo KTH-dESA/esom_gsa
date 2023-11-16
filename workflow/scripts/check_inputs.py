@@ -13,7 +13,7 @@ To run this script on the command line, use the following::
 import sys
 from pathlib import Path
 from typing import Dict, List, Union, Any
-from otoole.read_strategies import ReadDatapackage
+from otoole.read_strategies import ReadCsv
 from otoole.utils import _read_file
 import csv
 import pandas as pd
@@ -25,29 +25,25 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
-def check_datapackage(scenario : int, path: str):
-    """Checks for the existance of the scenario datapackages.
+def check_csv(scenario : int, path: str):
+    """Checks for the existance of the scenario data.
 
     Parameters
     ----------
     scenario : int
         name of scenario
     path: str
-        path to datapackage file
+        path to csv folder
 
     Raises
     ------
     FileNotFoundError
-        If datapackage does not exist
-    ValueError
-        If datapackage is not a .json
-
+        If csv data does not exist
     """
-    if not Path(path).is_file():
+    if not Path(path).is_dir():
         raise FileNotFoundError(
-            f"Datapackage {path} does not exist for scenario {scenario}."
+            f"csv directory {path} does not exist for scenario {scenario}."
         )
-    check_file_extension(path, 'json')
 
 def check_scenario_file(path : str): 
     """Checks the validity of the scenario file.
@@ -68,7 +64,7 @@ def check_scenario_file(path : str):
         If scenario name is not an int
     """
 
-    expected_headings = ['name','description','datapackage','config']
+    expected_headings = ['name','description','csv','config']
 
     if not Path(path).is_file():
         raise FileNotFoundError(
@@ -93,10 +89,8 @@ def check_scenario_file(path : str):
                 f"not an int"
             )
 
-    for name, datapackage in zip(df['name'], df['datapackage']):
-        check_datapackage(name, datapackage)
-
-    
+    for name, csv in zip(df['name'], df['csv']):
+        check_csv(name, csv)
 
 def check_model_file(path: str):
     """Checks for existance of model file. 
@@ -177,7 +171,7 @@ def check_replicates(replicates: int):
 
 def check_parameter_index_data(
     param : Dict[str, Union[str, int, float]],
-    datapackage : Dict[str, Union[str, int, float]],
+    user_config : Dict[str, Union[str, int, float]],
     model_params : Dict[str, pd.DataFrame]
 ):
     """Checks indices of parameter data for validity. 
@@ -186,8 +180,8 @@ def check_parameter_index_data(
     ----------
     param: Dict[str, Union[str, int, float]]
         Parameter data
-    datapackage : Dict[str, Union[str, int, float]]
-        Datapackage data
+    user_config : Dict[str, Union[str, int, float]]
+        otoole configuration file 
     model_params : Dict[str, pd.DataFrame]
         Input data for model 
     
@@ -197,7 +191,7 @@ def check_parameter_index_data(
         If parameter indices do not match config indices
     """
 
-    config_indices = datapackage[param['name']]['indices'].copy()
+    config_indices = user_config[param['name']]['indices'].copy()
     param_index = param['indexes'].split(',')
     param_interp_index = param['interpolation_index']
 
@@ -213,7 +207,7 @@ def check_parameter_index_data(
         except ValueError:
             raise ValueError(
                 f"Interpolation index {param_interp_index} for {param['name']} "
-                f"is not in the datapackage's indices for {param['name']}, which "
+                f"does not match user config indices for {param['name']}, which "
                 f"include {param_index}"
             )
 
@@ -221,7 +215,7 @@ def check_parameter_index_data(
         raise ValueError(
             f"The indices provided for {param['name']} of {param_index} do "
             f"not correspond to the following indices specified in the "
-            f"datapackge: {config_indices}"
+            f"csv data: {config_indices}"
         )
 
     for num, index in enumerate(config_indices):
@@ -304,7 +298,7 @@ def is_number(s):
 
 def check_parameter_data(
     param : Dict[str, Union[str, int, float]],
-    datapackage : Dict[str, Union[str, int, float]]
+    user_config : Dict[str, Union[str, int, float]]
 ):
     """Checks baisc input parameter data. 
 
@@ -312,8 +306,8 @@ def check_parameter_data(
     ----------
     param: Dict[str, Union[str, int, float]]
         Parameter data
-    datapackage : Dict[str, Union[str, int, float]]
-        Datapackage data
+    user_config : Dict[str, Union[str, int, float]]
+        otoole configuration file 
     
     Raises
     ------
@@ -327,10 +321,10 @@ def check_parameter_data(
     """
 
     try:
-        datapackage[param['name']]
+        user_config[param['name']]
     except ValueError:
         raise ValueError(
-            f"{param['name']} is in parameter file, but not in scenario datapackage"
+            f"{param['name']} is in parameter file, but not in scenario user_config"
         )
 
     if param['dist'] != 'unif':
@@ -368,19 +362,20 @@ def check_parameter_data(
             )
 
 def check_parameters(
-    datapackage : str, 
+    csv_dir : str, 
     parameters : List[Dict[str, Union[str, int, float]]], 
-    user_config : Dict
+    user_config : Dict[str, Union[str, int, float]]
 ): 
     """Checks parameter file. 
 
     Parameters
     ----------
-    datapackage : str
-        path to master datapackage
+    csv_dir : str
+        path to master csv data directory 
     parameters: List[Dict[str, Union[str, int, float]]]
         Flattened parameter file 
-    user_config : 
+    user_config : Dict[str, Union[str, int, float]]
+        otoole configuration file 
     
     Raises
     ------
@@ -409,7 +404,7 @@ def check_parameters(
         )
 
     # get model parameter definitions 
-    model_params, _ = ReadDatapackage(user_config=user_config).read(datapackage)
+    model_params, _ = ReadCsv(user_config=user_config).read(csv_dir)
 
     for parameter in parameters:
         check_parameter_data(parameter, user_config)
@@ -460,11 +455,9 @@ def check_file_extension(file_name : str, extension : str):
 def check_otoole_inputs(
     actual_data : str, 
     scenario : int,
-    expected_data : str = 'otoole_files.csv',
+    user_config: Dict[str, Union[str, int, float]],
 ):
     """Checks that scenario data matches what snakemake will expect
-    
-    This is a useful sanity check on the otoole version you are using. 
 
     Parameters
     ----------
@@ -481,7 +474,7 @@ def check_otoole_inputs(
         If the input csvs do not match the csvs in resources/otoole_files.csv
     """
     missing_files = []
-    expected_files = pd.read_csv(Path('resources', expected_data))['inputs'].to_list()
+    expected_files = [x for x, y in user_config.items() if y["type"] in ["param", "set"]]
     for csv in Path(actual_data).iterdir():
         if csv.stem not in expected_files:
             missing_files.append(f"{csv.stem}.csv")
@@ -506,27 +499,27 @@ def main(config : Dict[str, Any]):
     """
 
     # check config file
-    check_scenario_file(config['datapackage'])
+    check_scenario_file(config['scenarios'])
     check_model_file(config['model_file'])
     check_solver(config['solver'])
     check_replicates(config['replicates'])
 
-    # read in datapackage path and user_config file
-    scenario_df = pd.read_csv(config['datapackage'])
+    # read in csv path and user_config file
+    scenario_df = pd.read_csv(config['scenarios'])
     scenarios = scenario_df['name'].to_list()
-    datapackages = scenario_df['datapackage'].to_list()
+    csvs = scenario_df['csv'].to_list()
     configs = scenario_df['config'].to_list()
     parameters = read_parameters_file(config['parameters'])
     with open(configs[0], "r") as f:
         user_config = _read_file(f, ".yaml")
     
     # check parameter file 
-    check_parameters(datapackages[0], parameters, user_config)
+    check_parameters(csvs[0], parameters, user_config)
 
     # check otoole inputs 
-    for scenario, datapackage in zip(scenarios, datapackages):
-        data_dir = Path(Path(datapackage).parent, 'data')
-        check_otoole_inputs(str(data_dir), scenario)
+    for scenario, csv in zip(scenarios, csvs):
+        data_dir = Path(csv)
+        check_otoole_inputs(str(data_dir), scenario, user_config)
 
 if __name__ == "__main__":
 

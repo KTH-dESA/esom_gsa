@@ -7,34 +7,7 @@ python run_status.py <output_file> <modelruns: int> <scenarios: int>
 import sys
 from typing import List
 from csv import DictReader, DictWriter
-
 import pandas as pd
-
-def read_data(filepath):
-
-    with open(filepath, r) as csvfile:
-        reader = DictReader(csvfile)
-        data = list(reader.readlines())
-
-    return df
-
-def write_data(df, list_of_filepaths):
-    """Write out data to disk
-    """
-    pass
-
-def process_data(df):
-    """
-    """
-
-
-    return processed_df
-
-def read_input_data(paths):
-    data = []
-    for path in paths:
-        data.append(pd.read_csv(path))
-
 
 STATUS_MAP = {
     1: 'LOADED',

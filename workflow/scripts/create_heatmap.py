@@ -41,11 +41,25 @@ import sys
 import utils
 import seaborn as sns
 import matplotlib.pyplot as plt
-
+from typing import List
 
 from logging import getLogger
 
 logger = getLogger(__name__)
+
+def add_zeros(df : pd.DataFrame, model_runs: List[str]) -> pd.DataFrame:
+    """Add zeros to perserve shape of dataframes"""
+    
+    actual_runs = df["MODELRUN"].unique()
+    data = []
+    
+    for run in model_runs:
+        if run not in actual_runs:
+            data.append([run, 0])
+    
+    df_to_add = pd.DataFrame(data, columns=["MODELRUN", "VALUE"])
+    
+    return pd.concat([df, df_to_add]).sort_values("MODELRUN").reset_index(drop=True)
 
 def sort_results(df : pd.DataFrame, year : int) -> np.array:
     """Organizes a model variable results file for a morris analysis
@@ -62,13 +76,19 @@ def sort_results(df : pd.DataFrame, year : int) -> np.array:
     Y : np.array
         Results for morris analysis
     """
-    df = df.xs(year, level=('YEAR')).reset_index()
+    model_runs = df.index.get_level_values("MODELRUN").unique()
+    try:
+        df = df.xs(year, level=('YEAR')).reset_index()
+        df = add_zeros(df, model_runs)
+    except KeyError: 
+        data = [[x,0] for x in model_runs]
+        df = pd.DataFrame(data, columns=["MODELRUN", "VALUE"])
     df['NUM'] = df['MODELRUN'].map(lambda x: int(x.split('_')[1]))
     df = df.sort_values(by='NUM').reset_index(drop=True).drop(('NUM'), axis=1).set_index('MODELRUN')
-    Y = df.to_numpy()
+    Y = df.to_numpy(dtype=float)
     return Y
 
-def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: str):
+def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: str, scaled: bool = False):
     """Performs SA and plots results. 
 
     Parameters
@@ -81,21 +101,23 @@ def main(parameters: dict, X: np.array, model_results: pd.DataFrame, save_file: 
         Model results for a OSeMOSYS variable 
     save_file : str
         File path to save results
+    scaled : bool = False
+        If the input sample is scaled
     """
 
     problem = utils.create_salib_problem(parameters)
-    model_results = model_results.groupby(['MODELRUN','YEAR']).sum()
+    model_results = model_results.groupby(['MODELRUN','YEAR']).sum(numeric_only=True)
 
     years = model_results.index.unique(level='YEAR')
     SA_result_data = []
 
-    for year in model_results.index.unique(level='YEAR'):
+    for year in years:
         Y = sort_results(model_results, year)
-        Si = analyze_morris.analyze(problem, X, Y, print_to_console=False)
+        Si = analyze_morris.analyze(problem, X, Y, print_to_console=False, scaled=scaled)
         SA_result_data.append(Si['mu_star'])
     
     SA_result_data = np.ma.concatenate([SA_result_data])
-    columns = set([x['group'] for x in parameters])
+    columns = list(set([x['group'] for x in parameters]))
     SA_results = pd.DataFrame(np.ma.getdata(SA_result_data), columns=columns, index=years).T
 
     # Save figure results
@@ -113,11 +135,14 @@ if __name__ == "__main__":
     sample = sys.argv[2]
     result_file = sys.argv[3]
     save_file = str(Path(sys.argv[4]).with_suffix(''))
+    scaled = sys.argv[5]
+    scaled = False if scaled == "False" else True
+    
     with open(parameters_file, 'r') as csv_file:
         parameters = list(csv.DictReader(csv_file))
 
     X = np.loadtxt(sample, delimiter=',')
     results = pd.read_csv(result_file)
 
-    main(parameters, X, results, save_file)
+    main(parameters, X, results, save_file, scaled)
     
